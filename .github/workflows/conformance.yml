@@ -22,7 +22,12 @@ jobs:
           cache-dependency-path: conformance/go.sum
       - name: Formatting
         shell: bash
-        run: test -z "$(gofmt -l conformance tools review/ed25519/review.go)"
+        run: |
+          unformatted=$(gofmt -l conformance tools review/ed25519/review.go)
+          if [ -n "$unformatted" ]; then
+            printf 'Files requiring gofmt:\n%s\n' "$unformatted"
+            exit 1
+          fi
       - name: Vet
         working-directory: conformance
         run: go vet ./...

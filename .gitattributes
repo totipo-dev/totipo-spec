@@ -1,0 +1,6 @@
+# Keep source and configuration formatting stable on every checkout platform.
+* text=auto eol=lf
+
+# Reviewed artifacts and manifests are hashed as exact bytes. Never convert them.
+/vectors/** -text
+/review/** -text
