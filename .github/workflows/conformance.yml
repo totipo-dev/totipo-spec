@@ -12,11 +12,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.26.x', stable]
+        go: ['1.23.x', stable]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: ${{ matrix.go }}
           cache-dependency-path: conformance/go.sum
@@ -45,16 +45,17 @@ jobs:
           (cd vectors/v0 && sha256sum -c manifest.sha256)
           sha256sum -c conformance/review-inventory.sha256
           sha256sum -c review/phase2/inventory.sha256
+          sha256sum -c review/phase3/source.sha256
   linux-integration:
     name: Linux storage and process tests (Go ${{ matrix.go }})
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.26.x', stable]
+        go: ['1.23.x', stable]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: ${{ matrix.go }}
           cache-dependency-path: conformance/go.sum
@@ -68,7 +69,7 @@ jobs:
         run: |
           set -o pipefail
           TMPDIR="$GITHUB_WORKSPACE/.phase3-test-tmp" go -C conformance test ./reference/... -count=1 -timeout=180s -json | tee phase3-integration.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: linux-integration-${{ matrix.go }}
@@ -77,10 +78,10 @@ jobs:
     name: Linux race detector
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
-          go-version: '1.26.x'
+          go-version: stable
           cache-dependency-path: conformance/go.sum
       - name: Race detector including storage and processes
         shell: bash

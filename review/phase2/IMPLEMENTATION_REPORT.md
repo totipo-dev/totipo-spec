@@ -37,7 +37,7 @@ vectors/v0/recovery/phase2.json          28
 vectors/v0/presentation/phase2.json      11
 ```
 
-Every new case and provenance class is enumerated in [review/phase2/CASE_INDEX.md](review/phase2/CASE_INDEX.md): 115 `spec-derived-reviewed`, two `reviewed-pinned`, one `published-standard`. “Reviewed” records the agent's explicit author review with separate calculations, not an outside human reviewer or organization. No random/property/fuzz result was automatically promoted into normative expectations. Explicit derivations and assumptions are in [the semantic/state review](review/phase2/REVIEW.md) and [the Ed25519 mathematical review](review/ed25519/REVIEW.md).
+Every new case and provenance class is enumerated in [review/phase2/CASE_INDEX.md](CASE_INDEX.md): 115 `spec-derived-reviewed`, two `reviewed-pinned`, one `published-standard`. “Reviewed” records the agent's explicit author review with separate calculations, not an outside human reviewer or organization. No random/property/fuzz result was automatically promoted into normative expectations. Explicit derivations and assumptions are in [the semantic/state review](REVIEW.md) and [the Ed25519 mathematical review](../ed25519/REVIEW.md).
 
 ## Strict Ed25519
 

@@ -9,6 +9,8 @@ fresh adapter/client reconstruction, not in-memory error simulations.
 repository root with `sha256sum -c review/phase3/source.sha256`.
 
 These are non-normative implementation observations, not protocol expectations,
-external review, or evidence of a remote CI run. The existing historical and
-Phase 2 review inventories and normative vectors remain unchanged. See the root
-`PHASE3_IMPLEMENTATION_REPORT.md` for commands, boundary assumptions, and limits.
+external review, or evidence of a remote CI run. The historical input bytes,
+Phase 2 review inventory, and normative vectors remain unchanged; the historical
+inventory records the seed index's move into `review/process/`. See the
+[Phase 3 implementation report](IMPLEMENTATION_REPORT.md) for commands, boundary
+assumptions, and limits.

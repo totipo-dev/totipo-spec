@@ -2,7 +2,7 @@
 
 The Linux reference implementation now joins frozen protocol bytes, strict crypto validation, the existing semantic models, durable local security memory, filesystem publication, restart reconstruction, and cross-process locking. Local tests pass on Linux/ext4. This is reference/conformance evidence, not production readiness, power-loss proof, cross-platform durability, or full Totipo client conformance.
 
-The implementation is under [`conformance/reference/`](conformance/reference/README.md). Machine-readable local results and source hashes are under [`review/phase3/`](review/phase3/README.md).
+The implementation is under [`conformance/reference/`](../../conformance/reference/README.md). Machine-readable local results and source hashes are under [`review/phase3/`](README.md).
 
 ## Baseline and frozen artifacts
 
@@ -26,7 +26,7 @@ Environment: **Go 1.26.7, Linux 6.18.44, amd64, GCC 15.3.0**. The final tests us
 - Formatting, vet, normative CLI, both original review inventories, and original vector hashes: PASS.
 - Portable packages cross-compiled for `darwin/amd64` and `windows/amd64`. They were **not executed** on those operating systems; Linux-only adapters/tests are intentionally absent there.
 
-The complete passed-case list, exact commands, crash-point names, and environment are in [`review/phase3/local-results.json`](review/phase3/local-results.json). [`review/phase3/source.sha256`](review/phase3/source.sha256) identifies the tested integration Go source.
+The complete passed-case list, exact commands, crash-point names, and environment are in [`review/phase3/local-results.json`](local-results.json). [`review/phase3/source.sha256`](source.sha256) identifies the tested integration Go source.
 
 ## Reference-client coverage
 
@@ -80,7 +80,7 @@ The Linux adapter uses component-by-component `openat(O_DIRECTORY|O_NOFOLLOW)`, 
 
 Temporary candidates use random exclusive 0700 staging directories and `O_CREAT|O_EXCL|O_NOFOLLOW` 0600 files. Candidate bytes are read back against the validated input. Immutable objects and initial VAULT use **`renameat2(RENAME_NOREPLACE)`**; same-root rewrap uses **`renameat2(..., 0)`**. File and final-directory fsyncs precede success. Existing identical immutable files are read, compared, and fsynced; different or unsafe entries are not overwritten. Final bytes are checked again.
 
-Filesystem assumptions, primitive references, API preconditions, and trust boundaries are documented in [`conformance/reference/README.md`](conformance/reference/README.md). No unsafe fallback is offered when Linux/procfs/filesystem facilities are unavailable. Network/sync-provider APIs and filesystem behavior beyond the tested local ext4 environment remain unsupported.
+Filesystem assumptions, primitive references, API preconditions, and trust boundaries are documented in [`conformance/reference/README.md`](../../conformance/reference/README.md). No unsafe fallback is offered when Linux/procfs/filesystem facilities are unavailable. Network/sync-provider APIs and filesystem behavior beyond the tested local ext4 environment remain unsupported.
 
 The existing pinned **`golang.org/x/sys v0.31.0`** is now a direct dependency for these syscalls. Its version did not change. No new crypto or database dependency was introduced.
 

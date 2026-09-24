@@ -9,21 +9,21 @@ go run ./conformance/cmd/totipo-conformance ./vectors/v0
 go run ./conformance/cmd/totipo-conformance --filter v0/bootstrap/ ./vectors/v0
 ```
 
-The root `go.work` makes the requested root command work while the implementation module remains under `conformance/`. Filters may precede or follow the directory, including `v0/ed25519/`, `v0/lifecycle/`, `v0/recovery/`, and `v0/presentation/`. No matches, invalid artifacts, manifest mismatch, or case failure produce a nonzero exit status. Explicit blocked cases and missing required categories print BLOCKED and exit 2; they never count as PASS. The current result is documented in [the Phase 2 report](../PHASE2_IMPLEMENTATION_REPORT.md); [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) preserves the historical Phase 1 checkpoint.
+The root `go.work` makes the requested root command work while the implementation module remains under `conformance/`. Filters may precede or follow the directory, including `v0/ed25519/`, `v0/lifecycle/`, `v0/recovery/`, and `v0/presentation/`. No matches, invalid artifacts, manifest mismatch, or case failure produce a nonzero exit status. Explicit blocked cases and missing required categories print BLOCKED and exit 2; they never count as PASS. The current 388-case abstract result is documented in [the Phase 2 report](../review/phase2/IMPLEMENTATION_REPORT.md); [the Phase 1 report](../review/phase1/IMPLEMENTATION_REPORT.md) preserves the historical initial checkpoint.
 
 ```sh
-cd conformance
-go fmt ./...
-go vet ./...
-go test -count=1 ./...
-go test -race ./...
+go -C conformance fmt ./...
+go -C conformance vet ./...
+mkdir -m 700 -p .phase3-test-tmp
+TMPDIR="$PWD/.phase3-test-tmp" go -C conformance test -count=1 -timeout=180s ./...
+TMPDIR="$PWD/.phase3-test-tmp" go -C conformance test -race -count=1 -timeout=300s ./...
 ```
 
 Use `-count=1` when verifying corpus changes: Go's test cache may not notice newly added files outside the module. Normal tests and the CLI only read expectations; they do not regenerate them. Formatting can be checked without writing with `gofmt -l conformance tools/normalize.go` from the root.
 
-Dependencies are pinned to `golang.org/x/crypto v0.36.0` for Argon2id, its indirect `golang.org/x/sys v0.31.0` CPU support dependency, and `filippo.io/edwards25519 v1.1.0` for public point decoding/addition in strict subgroup checks. The latter is needed because standard `crypto/ed25519` and its x/crypto wrapper do not expose point arithmetic. It is not used by the isolated math/big reviewer. Everything else uses the Go standard library. HKDF-SHA-256 outputs are exactly 32 bytes, so Expand is expressed directly as its single HMAC block with counter `0x01`. No serialization or testing framework dependencies are used. Minimum declared language version is Go 1.23; the local validated toolchain is Go 1.26.7.
+Dependencies are pinned to `golang.org/x/crypto v0.36.0` for Argon2id, `golang.org/x/sys v0.31.0` for Linux syscalls and CPU support, and `filippo.io/edwards25519 v1.1.0` for public point decoding/addition in strict subgroup checks. The latter is needed because standard `crypto/ed25519` and its x/crypto wrapper do not expose point arithmetic. It is not used by the isolated math/big reviewer. Everything else uses the Go standard library. HKDF-SHA-256 outputs are exactly 32 bytes, so Expand is expressed directly as its single HMAC block with counter `0x01`. No serialization or testing framework dependencies are used. The supported minimum is Go 1.23, matching `go.mod` and `go.work`; CI tests `1.23.x` and current `stable`. Phase reports retain the exact toolchains used for their historical runs.
 
-The reviewed corpus is normalized without executing historical generators. The normalizer verifies the source hashes recorded by the review evidence. [review-inventory.sha256](review-inventory.sha256) inventories all 17 historical files, including reports and source code. The protocol and original review files were not edited.
+The reviewed corpus is normalized without executing historical generators. The normalizer verifies the source hashes recorded by the review evidence. [review-inventory.sha256](review-inventory.sha256) inventories all 17 historical files, including reports and source code. The original seed review index is now preserved at `review/process/SEED_REVIEW_README.md`; its inventory path changed while its hash and bytes stayed the same. Original pinned review inputs remain unchanged.
 
 Independence checks include:
 
@@ -36,9 +36,13 @@ Independence checks include:
 
 The implementation was authored from the current spec; historical parser and lifecycle implementations were not ported. Structural TLV signatures may be opaque placeholders. Phase 2 adds a strict `ed25519profile.Verify` and 33 fixed, mathematically reviewed acceptance/rejection vectors, including equation-valid mixed-order signatures. The consumer checks canonicality, small order, unreduced-integer subgroup membership and scalar bounds before standard PureEd25519 equation verification. See [the explicit mathematical review](../review/ed25519/REVIEW.md). This closes the former missing-corpus blocker; it does not turn structural TLV acceptance into full semantic validity.
 
-The token model operates after identity, structural and signature validation. A separate oracle uses causal-closure projection rather than its field-parent traversal and JOIN implementation. Both consume the retained 15 scenarios and 32 new transition scenarios, with additional fixed-seed differential and mutant tests. DEVICE_UPDATE, durable evidence/recovery, future bypass, confirmation/establishment and migration have separate symbolic models and fixtures. The memory reviewer uses a durable-fact ledger and transitive closure independently of the primary memory maps. An abstract Store tests publication ordering and hostile namespace policies; real OS adapters and power-loss testing are not implemented. These layer boundaries and review limits are explicit in [the Phase 2 review](../review/phase2/REVIEW.md).
+The token model operates after identity, structural and signature validation. A separate oracle uses causal-closure projection rather than its field-parent traversal and JOIN implementation. Both consume the retained 15 scenarios and 32 new transition scenarios, with additional fixed-seed differential and mutant tests. DEVICE_UPDATE, durable evidence/recovery, future bypass, confirmation/establishment and migration have separate symbolic models and fixtures. The memory reviewer uses a durable-fact ledger and transitive closure independently of the primary memory maps. An abstract Store tests publication ordering and hostile namespace policies; Linux storage integration is a separate Phase 3 layer described below, and actual power-loss testing is not implemented. These abstract-layer boundaries and review limits are explicit in [the Phase 2 review](../review/phase2/REVIEW.md).
 
-Five fuzz targets are documented in [../fuzz/README.md](../fuzz/README.md). CI verifies formatting, vet, deterministic cases and fuzz seeds, and CLI execution on Linux/macOS/Windows with Go 1.26.x and the current stable toolchain; Linux also runs the race detector. CI never fetches expected vectors or executes the maintenance converter.
+Five fuzz targets are documented in [FUZZING.md](FUZZING.md). CI separates portable semantic/crypto tests on Linux/macOS/Windows with Go `1.23.x` and `stable`, Linux-only integration tests for those versions, and a Linux race-detector job on `stable`. CI never regenerates expected vectors or executes the maintenance converter. Portable tests can be run independently of the Linux adapter:
+
+```sh
+go -C conformance test -count=1 ./internal/... ./cmd/... ./reference/client ./reference/fault ./reference/localstate ./reference/storage
+```
 
 ## Phase 3 integration layer
 
@@ -49,6 +53,7 @@ normative corpus remains 388 cases; platform tests are counted separately.
 `golang.org/x/sys v0.31.0` is now a direct dependency for explicit Linux syscalls;
 its pinned version is unchanged. No database dependency was added.
 
-See the root [Phase 3 implementation report](../PHASE3_IMPLEMENTATION_REPORT.md)
-for executed evidence and limits. Workflow files are prepared locally; remote CI
-has not been executed for the private repository.
+See the [Phase 3 implementation report](../review/phase3/IMPLEMENTATION_REPORT.md)
+for that checkpoint's executed evidence and limits. Historical report statements
+about CI describe their recorded runs; they are not proof that a later workflow
+revision passed remotely. The revised minimum-version matrix needs a fresh run.
