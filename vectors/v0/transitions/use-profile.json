@@ -1,0 +1,369 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "v0/transitions/use-healthy",
+      "kind": "use_profile",
+      "description": "Application safety: healthy",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-healthy"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "true",
+        "disposition": "ALLOW",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-regression",
+      "kind": "use_profile",
+      "description": "Application safety: regression",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-regression"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "true",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-incomplete",
+      "kind": "use_profile",
+      "description": "Application safety: incomplete",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-incomplete"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "true",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-lifecycle",
+      "kind": "use_profile",
+      "description": "Application safety: lifecycle",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-lifecycle"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "true",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-ambiguous-status",
+      "kind": "use_profile",
+      "description": "Application safety: ambiguous-status",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-ambiguous-status"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE,TOMBSTONE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-tombstone",
+      "kind": "use_profile",
+      "description": "Application safety: tombstone",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-tombstone"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "TOMBSTONE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-credential-ambiguous",
+      "kind": "use_profile",
+      "description": "Application safety: credential-ambiguous",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-credential-ambiguous"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0,k1",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-credential-missing",
+      "kind": "use_profile",
+      "description": "Application safety: credential-missing",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-credential-missing"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "false",
+        "credential_values": "",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-credential-incomplete",
+      "kind": "use_profile",
+      "description": "Application safety: credential-incomplete",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-credential-incomplete"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "false",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-equal-credential-values",
+      "kind": "use_profile",
+      "description": "Application safety: equal-credential-values",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-equal-credential-values"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0,k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "true",
+        "disposition": "ALLOW",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-equal-live-values",
+      "kind": "use_profile",
+      "description": "Application safety: equal-live-values",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-equal-live-values"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE,LIVE"
+      },
+      "expected": {
+        "active": "true",
+        "disposition": "ALLOW",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-issuer-conflict",
+      "kind": "use_profile",
+      "description": "Application safety: issuer-conflict",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-issuer-conflict"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "true",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "true",
+        "disposition": "ALLOW",
+        "metadata_conflict": "true",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-account-conflict",
+      "kind": "use_profile",
+      "description": "Application safety: account-conflict",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-account-conflict"
+      },
+      "input": {
+        "account_conflict": "true",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "false",
+        "status_values": "LIVE"
+      },
+      "expected": {
+        "active": "true",
+        "disposition": "ALLOW",
+        "metadata_conflict": "true",
+        "recovery_visible": "true"
+      }
+    },
+    {
+      "id": "v0/transitions/use-tombstone-conflict-discoverable",
+      "kind": "use_profile",
+      "description": "Application safety: tombstone-conflict-discoverable",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 68.1; use-tombstone-conflict-discoverable"
+      },
+      "input": {
+        "account_conflict": "false",
+        "credential_complete": "true",
+        "credential_values": "k0",
+        "degraded": "false",
+        "incomplete": "false",
+        "issuer_conflict": "false",
+        "lifecycle_conflict": "true",
+        "status_values": "TOMBSTONE"
+      },
+      "expected": {
+        "active": "false",
+        "disposition": "BLOCK",
+        "metadata_conflict": "false",
+        "recovery_visible": "true"
+      }
+    }
+  ]
+}

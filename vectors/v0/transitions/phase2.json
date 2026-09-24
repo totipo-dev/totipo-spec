@@ -1,0 +1,2762 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "v0/transitions/any-tombstone-blocks-credential-only",
+      "kind": "model",
+      "description": "any-tombstone-blocks-credential-only",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 41; any-tombstone-blocks-credential-only"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "live",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "c",
+            "token": "t",
+            "parents": [
+              "d",
+              "live"
+            ],
+            "fields": {
+              "CREDENTIAL": "bad"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "c": "INVALID",
+            "d": "FULLY_VALID",
+            "live": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "live"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d",
+                  "live"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/combined-fields",
+      "kind": "model",
+      "description": "combined-fields",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 29; combined-fields"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "e",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ACCOUNT": "new",
+              "ISSUER": "new"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "e": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "e"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "e"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "e"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/complete-visible-field-merge",
+      "kind": "model",
+      "description": "complete-visible-field-merge",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 24,31; complete-visible-field-merge"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "a",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "left"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "b",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "right"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "m",
+            "token": "t",
+            "parents": [
+              "a",
+              "b"
+            ],
+            "fields": {
+              "ISSUER": "chosen"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "m": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "m"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "m"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/conflict-edit-account",
+      "kind": "model",
+      "description": "conflict-edit-ACCOUNT",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 37; conflict-edit-ACCOUNT"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "e",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "ACCOUNT": "edit"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "e": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "e"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "e"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/conflict-edit-issuer",
+      "kind": "model",
+      "description": "conflict-edit-ISSUER",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 37; conflict-edit-ISSUER"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "e",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "ISSUER": "edit"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "e": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "e"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "e"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/coverage-inherited-by-status-descendant",
+      "kind": "model",
+      "description": "coverage-inherited-by-status-descendant",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 34; coverage-inherited-by-status-descendant"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "x",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "y",
+            "token": "t",
+            "parents": [
+              "x"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "x": "FULLY_VALID",
+            "y": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "y"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "y"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": [
+            "x"
+          ]
+        },
+        "coverage": {
+          "x": [
+            "r",
+            "w"
+          ]
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/creation-missing-account",
+      "kind": "model",
+      "description": "creation-missing-ACCOUNT",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 28; creation-missing-ACCOUNT"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "bad",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "bad": "INVALID"
+          },
+          "tokens": {},
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/creation-missing-credential",
+      "kind": "model",
+      "description": "creation-missing-CREDENTIAL",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 28; creation-missing-CREDENTIAL"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "bad",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "bad": "INVALID"
+          },
+          "tokens": {},
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/creation-missing-issuer",
+      "kind": "model",
+      "description": "creation-missing-ISSUER",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 28; creation-missing-ISSUER"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "bad",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "bad": "INVALID"
+          },
+          "tokens": {},
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/creation-missing-status",
+      "kind": "model",
+      "description": "creation-missing-STATUS",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 28; creation-missing-STATUS"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "bad",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "bad": "INVALID"
+          },
+          "tokens": {},
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/dependency-unavailable",
+      "kind": "model",
+      "description": "dependency-unavailable",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 56,57; dependency-unavailable"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "w": "PENDING"
+          },
+          "tokens": {},
+          "resolutions": []
+        },
+        "unavailable": [
+          "r"
+        ]
+      }
+    },
+    {
+      "id": "v0/transitions/different-values-conflict",
+      "kind": "model",
+      "description": "different-values-conflict",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 30; different-values-conflict"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "a",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "left"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "b",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "right"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "a",
+                "b"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "a",
+                  "b"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/edit-account",
+      "kind": "model",
+      "description": "edit-ACCOUNT",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 23-31; edit-ACCOUNT"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "e",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ACCOUNT": "new"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "e": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "e"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "e"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/edit-credential",
+      "kind": "model",
+      "description": "edit-CREDENTIAL",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 23-31; edit-CREDENTIAL"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "e",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "new"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "e": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "e"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "e"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/edit-issuer",
+      "kind": "model",
+      "description": "edit-ISSUER",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 23-31; edit-ISSUER"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "e",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "new"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "e": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "e"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "e"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/hidden-branch-selected-view",
+      "kind": "model",
+      "description": "hidden-branch-selected-view",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 22,49,56; hidden-branch-selected-view"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        },
+        "observed": [
+          "d"
+        ]
+      }
+    },
+    {
+      "id": "v0/transitions/historical-witness-current-head-counterexample",
+      "kind": "model",
+      "description": "historical-witness-current-head-counterexample",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 33-36,41; historical-witness-current-head-counterexample"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "s",
+            "token": "t",
+            "parents": [
+              "d"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "c",
+            "token": "t",
+            "parents": [
+              "s",
+              "w"
+            ],
+            "fields": {
+              "CREDENTIAL": "k2"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "c": "FULLY_VALID",
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "s": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "c"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "c"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "s"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "s",
+                  "credential": "w",
+                  "transitions": [
+                    "d",
+                    "s"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/issuer-credential-compose",
+      "kind": "model",
+      "description": "issuer-credential-compose",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 27; issuer-credential-compose"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "i",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "i2"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "i": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "i",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "i"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/multi-parent-status-transition",
+      "kind": "model",
+      "description": "multi-parent-status-transition",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 32; multi-parent-status-transition"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "live",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "many",
+            "token": "t",
+            "parents": [
+              "d",
+              "live"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "live": "FULLY_VALID",
+            "many": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "many",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "many"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "many",
+                  "credential": "w",
+                  "transitions": [
+                    "d",
+                    "many"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/multiple-equal-status-heads",
+      "kind": "model",
+      "description": "multiple-equal-status-heads",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 30,32,36; multiple-equal-status-heads"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d2",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "d2": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "d2",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d",
+                  "d2"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                },
+                {
+                  "status": "d2",
+                  "credential": "w",
+                  "transitions": [
+                    "d2"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/multiple-witness-branches",
+      "kind": "model",
+      "description": "multiple-witness-branches",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 36; multiple-witness-branches"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w2",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k2"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "w2": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "w",
+                "w2"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w",
+                  "w2"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                },
+                {
+                  "status": "d",
+                  "credential": "w2",
+                  "transitions": [
+                    "d"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/omitted-branch-not-retroactive-invalidity",
+      "kind": "model",
+      "description": "omitted-branch-not-retroactive-invalidity",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 22,31,50; omitted-branch-not-retroactive-invalidity"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "a",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "left"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "b",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "right"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "h",
+            "token": "t",
+            "parents": [
+              "a"
+            ],
+            "fields": {
+              "ISSUER": "chosen"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "h": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "b",
+                "h"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "b",
+                  "h"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/ordinary-status-conflict-no-witness",
+      "kind": "model",
+      "description": "ordinary-status-conflict-no-witness",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 32; ordinary-status-conflict-no-witness"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "live",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "live": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "live"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d",
+                  "live"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/pre-empty-status-plus-account",
+      "kind": "model",
+      "description": "pre-empty-status-plus-account",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 50; pre-empty-status-plus-account"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "o",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ACCOUNT": "new",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "o": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "o"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "o"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "o"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/pre-nonempty-status-plus-account",
+      "kind": "model",
+      "description": "pre-nonempty-status-plus-ACCOUNT",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 37,51; pre-nonempty-status-plus-ACCOUNT"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "x",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "ACCOUNT": "bad",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "x": "INVALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/pre-nonempty-status-plus-credential",
+      "kind": "model",
+      "description": "pre-nonempty-status-plus-CREDENTIAL",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 37,51; pre-nonempty-status-plus-CREDENTIAL"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "x",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "CREDENTIAL": "bad",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "x": "INVALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/pre-nonempty-status-plus-issuer",
+      "kind": "model",
+      "description": "pre-nonempty-status-plus-ISSUER",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 37,51; pre-nonempty-status-plus-ISSUER"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "x",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "ISSUER": "bad",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "x": "INVALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "d",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "d"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "d",
+                  "credential": "w",
+                  "transitions": [
+                    "d"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/resolve-all-status-and-witness-branches",
+      "kind": "model",
+      "description": "resolve-all-status-and-witness-branches",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 38,51; resolve-all-status-and-witness-branches"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d2",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w2",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k2"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "x",
+            "token": "t",
+            "parents": [
+              "d",
+              "d2",
+              "w",
+              "w2"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "d2": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "w2": "FULLY_VALID",
+            "x": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "x"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w",
+                  "w2"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "x"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": [
+            "x"
+          ]
+        },
+        "coverage": {
+          "x": [
+            "r",
+            "w",
+            "w2"
+          ]
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/restoration-credential-race",
+      "kind": "model",
+      "description": "restoration-credential-race",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 32-36,41; restoration-credential-race"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "s",
+            "token": "t",
+            "parents": [
+              "d"
+            ],
+            "fields": {
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "d"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "s": "FULLY_VALID",
+            "w": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "s",
+                "w"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "s",
+                  "w"
+                ]
+              },
+              "conflicts": [
+                {
+                  "status": "s",
+                  "credential": "w",
+                  "transitions": [
+                    "s"
+                  ]
+                }
+              ]
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/same-scalar-resolution",
+      "kind": "model",
+      "description": "same-scalar-resolution",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 34,38,51; same-scalar-resolution"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "d",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "w",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "k1"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "x",
+            "token": "t",
+            "parents": [
+              "d",
+              "w"
+            ],
+            "fields": {
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "d": "FULLY_VALID",
+            "r": "FULLY_VALID",
+            "w": "FULLY_VALID",
+            "x": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "x"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "w"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "x"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": [
+            "x"
+          ]
+        },
+        "coverage": {
+          "x": [
+            "r",
+            "w"
+          ]
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/signer-does-not-create-causality",
+      "kind": "model",
+      "description": "signer-does-not-create-causality",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 46; signer-does-not-create-causality"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "a",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "left"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "b",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "ISSUER": "right"
+            },
+            "signer": "device-b"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "a",
+                "b"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "a",
+                  "b"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    },
+    {
+      "id": "v0/transitions/tombstone-plus-credential",
+      "kind": "model",
+      "description": "tombstone-plus-credential",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 41; tombstone-plus-credential"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "scenario": {
+        "updates": [
+          {
+            "id": "r",
+            "token": "t",
+            "parents": [],
+            "fields": {
+              "ACCOUNT": "a",
+              "CREDENTIAL": "k0",
+              "ISSUER": "i",
+              "STATUS": "LIVE"
+            },
+            "signer": "device-a"
+          },
+          {
+            "id": "bad",
+            "token": "t",
+            "parents": [
+              "r"
+            ],
+            "fields": {
+              "CREDENTIAL": "bad",
+              "STATUS": "TOMBSTONE"
+            },
+            "signer": "device-a"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "bad": "INVALID",
+            "r": "FULLY_VALID"
+          },
+          "tokens": {
+            "t": {
+              "heads": [
+                "r"
+              ],
+              "fields": {
+                "ACCOUNT": [
+                  "r"
+                ],
+                "CREDENTIAL": [
+                  "r"
+                ],
+                "ISSUER": [
+                  "r"
+                ],
+                "STATUS": [
+                  "r"
+                ]
+              },
+              "conflicts": []
+            }
+          },
+          "resolutions": []
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+name: Totipo conformance
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable:
+    name: Portable (${{ matrix.os }}, Go ${{ matrix.go }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ['1.26.x', stable]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: conformance/go.sum
+      - name: Formatting
+        shell: bash
+        run: test -z "$(gofmt -l conformance tools review/ed25519/review.go)"
+      - name: Vet
+        working-directory: conformance
+        run: go vet ./...
+      - name: Portable semantic, crypto, and interface packages
+        working-directory: conformance
+        run: go test -count=1 ./internal/... ./cmd/... ./reference/client ./reference/fault ./reference/localstate ./reference/storage
+      - name: Normative vector CLI (388 cases)
+        run: go run ./conformance/cmd/totipo-conformance ./vectors/v0
+      - name: Independent Ed25519 arithmetic review
+        run: go run ./review/ed25519/review.go
+      - name: Frozen inventories
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          (cd vectors/v0 && sha256sum -c manifest.sha256)
+          sha256sum -c conformance/review-inventory.sha256
+          sha256sum -c review/phase2/inventory.sha256
+  linux-integration:
+    name: Linux storage and process tests (Go ${{ matrix.go }})
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.26.x', stable]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: conformance/go.sum
+      - name: Filesystem capability evidence
+        run: |
+          mkdir -m 700 -p "$GITHUB_WORKSPACE/.phase3-test-tmp"
+          uname -sr
+          stat -f -c '%T' "$GITHUB_WORKSPACE/.phase3-test-tmp"
+      - name: Integration, process death, and process races
+        shell: bash
+        run: |
+          set -o pipefail
+          TMPDIR="$GITHUB_WORKSPACE/.phase3-test-tmp" go -C conformance test ./reference/... -count=1 -timeout=180s -json | tee phase3-integration.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-integration-${{ matrix.go }}
+          path: phase3-integration.json
+  race:
+    name: Linux race detector
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache-dependency-path: conformance/go.sum
+      - name: Race detector including storage and processes
+        shell: bash
+        run: |
+          mkdir -m 700 -p "$GITHUB_WORKSPACE/.phase3-test-tmp"
+          TMPDIR="$GITHUB_WORKSPACE/.phase3-test-tmp" go -C conformance test -race -count=1 -timeout=300s ./...

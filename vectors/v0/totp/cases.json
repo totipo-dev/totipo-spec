@@ -1,0 +1,509 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "v0/totp/review-p1-c0-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "1",
+        "seconds": "0",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p1-c0-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "1",
+        "seconds": "0",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p1-c1-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "1",
+        "seconds": "1",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p1-c1-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "1",
+        "seconds": "1",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p1-c2-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "1",
+        "seconds": "2",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p1-c2-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "1",
+        "seconds": "2",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p2147483648-c0-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "2147483648",
+        "seconds": "2147483647",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p2147483648-c0-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "2147483648",
+        "seconds": "0",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p2147483648-c1-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "2147483648",
+        "seconds": "4294967295",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p2147483648-c1-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "2147483648",
+        "seconds": "2147483648",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p2147483648-c2-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "2147483648",
+        "seconds": "6442450943",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p2147483648-c2-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "2147483648",
+        "seconds": "4294967296",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p30-c0-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "30",
+        "seconds": "29",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p30-c0-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "30",
+        "seconds": "0",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p30-c1-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "30",
+        "seconds": "59",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p30-c1-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "30",
+        "seconds": "30",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p30-c2-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "30",
+        "seconds": "89",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p30-c2-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "30",
+        "seconds": "60",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p4294967295-c0-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "4294967295",
+        "seconds": "4294967294",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p4294967295-c0-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "4294967295",
+        "seconds": "0",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "755224",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p4294967295-c1-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "4294967295",
+        "seconds": "8589934589",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p4294967295-c1-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "4294967295",
+        "seconds": "4294967295",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "287082",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p4294967295-c2-end",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "4294967295",
+        "seconds": "12884901884",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    },
+    {
+      "id": "v0/totp/review-p4294967295-c2-start",
+      "kind": "totp",
+      "description": "Reviewed SHA-1 period boundary",
+      "provenance": {
+        "source": "review/source-code/R31Review.java",
+        "status": "reviewed-pinned-vector",
+        "locator": "testTotp: hotp constants and start/end assertions"
+      },
+      "input": {
+        "algorithm": "1",
+        "digits": "6",
+        "period": "4294967295",
+        "seconds": "8589934590",
+        "secret_hex": "3132333435363738393031323334353637383930"
+      },
+      "expected": {
+        "code": "359152",
+        "disposition": "VERIFIED"
+      }
+    }
+  ]
+}

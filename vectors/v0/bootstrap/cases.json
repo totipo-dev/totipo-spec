@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "v0/bootstrap/initial",
+      "kind": "bootstrap",
+      "description": "Exact reviewed bootstrap record",
+      "provenance": {
+        "source": "review/source-vectors/totp-vault-v0-r32-bootstrap-vectors.txt",
+        "status": "reviewed-pinned-vector",
+        "locator": "INITIAL"
+      },
+      "input": {
+        "argon2_salt_hex": "101112131415161718191a1b1c1d1e1f",
+        "password_utf8_hex": "636f727265637420686f727365206261747465727920737461706c65",
+        "root_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "wrap_nonce_hex": "a0a1a2a3a4a5a6a7a8a9aaab"
+      },
+      "expected": {
+        "disposition": "VERIFIED",
+        "header_aad_hex": "544f54502d5641554c5400101112131415161718191a1b1c1d1e1fa0a1a2a3a4a5a6a7a8a9aaab",
+        "k_wrap_hex": "1cd84e588c72f1d0bb3041fdd8a32de5ec738487c23ac9c5d84f119e05858bf8",
+        "vault_file_hex": "544f54502d5641554c5400101112131415161718191a1b1c1d1e1fa0a1a2a3a4a5a6a7a8a9aaab9db929ac413da2d56a0e91e671e41147de3a41e69ffd0f56e98bddcdf1855a766194838f30c5dcc8d4ed9b1482d183b2",
+        "wrap_tag_hex": "6194838f30c5dcc8d4ed9b1482d183b2",
+        "wrapped_root_hex": "9db929ac413da2d56a0e91e671e41147de3a41e69ffd0f56e98bddcdf1855a76"
+      }
+    },
+    {
+      "id": "v0/bootstrap/rewrap",
+      "kind": "bootstrap",
+      "description": "Exact reviewed bootstrap record",
+      "provenance": {
+        "source": "review/source-vectors/totp-vault-v0-r32-bootstrap-vectors.txt",
+        "status": "reviewed-pinned-vector",
+        "locator": "REWRAP"
+      },
+      "input": {
+        "argon2_salt_hex": "202122232425262728292a2b2c2d2e2f",
+        "password_utf8_hex": "547230756234646f7226332de29883",
+        "root_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "wrap_nonce_hex": "b0b1b2b3b4b5b6b7b8b9babb"
+      },
+      "expected": {
+        "disposition": "VERIFIED",
+        "header_aad_hex": "544f54502d5641554c5400202122232425262728292a2b2c2d2e2fb0b1b2b3b4b5b6b7b8b9babb",
+        "k_wrap_hex": "4598b1c2630b0d2f4d4c342f21a3cd020cee1d5b5900c22eea5093cfaa7b8753",
+        "vault_file_hex": "544f54502d5641554c5400202122232425262728292a2b2c2d2e2fb0b1b2b3b4b5b6b7b8b9babbc6ff9cac3e203c42af1d05c539f4d60028b3011585699df85940ccd5717d1bd225dc994943006eb8de3f884fcd1a73db",
+        "wrap_tag_hex": "25dc994943006eb8de3f884fcd1a73db",
+        "wrapped_root_hex": "c6ff9cac3e203c42af1d05c539f4d60028b3011585699df85940ccd5717d1bd2"
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+# Local integration-test scratch space and CI logs.
+.phase3-test-tmp/
+phase3-integration.json
+.direnv

@@ -1,0 +1,623 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "v0/presentation/concurrent-names",
+      "kind": "presentation",
+      "description": "concurrent-names",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; concurrent-names"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "a",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "alpha",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "b",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "beta",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "a",
+              "b"
+            ]
+          },
+          "names": {
+            "k": [
+              "alpha",
+              "beta"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/cross-signer-invalid",
+      "kind": "presentation",
+      "description": "cross-signer-invalid",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; cross-signer-invalid"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "other",
+            "signer": "other-key",
+            "parents": [],
+            "name": "other",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "cross",
+            "signer": "k",
+            "parents": [
+              "other"
+            ],
+            "name": "bad",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "cross": "INVALID",
+            "other": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "r"
+            ],
+            "other-key": [
+              "other"
+            ]
+          },
+          "names": {
+            "k": [
+              "root"
+            ],
+            "other-key": [
+              "other"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/duplicate-parent-invalid",
+      "kind": "presentation",
+      "description": "duplicate-parent-invalid",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; duplicate-parent-invalid"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "bad",
+            "signer": "k",
+            "parents": [
+              "r",
+              "r"
+            ],
+            "name": "bad",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "bad": "INVALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "r"
+            ]
+          },
+          "names": {
+            "k": [
+              "root"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/equal-values-distinct-heads",
+      "kind": "presentation",
+      "description": "equal-values-distinct-heads",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; equal-values-distinct-heads"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "a",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "alpha",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "b",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "alpha",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "a",
+              "b"
+            ]
+          },
+          "names": {
+            "k": [
+              "alpha"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/independent-roots",
+      "kind": "presentation",
+      "description": "independent-roots",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; independent-roots"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "second",
+            "signer": "k",
+            "parents": [],
+            "name": "second",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "r": "FULLY_VALID",
+            "second": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "r",
+              "second"
+            ]
+          },
+          "names": {
+            "k": [
+              "root",
+              "second"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/pending",
+      "kind": "presentation",
+      "description": "pending",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; pending"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "p",
+            "signer": "k",
+            "parents": [
+              "missing"
+            ],
+            "name": "pending",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "p": "PENDING",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "r"
+            ]
+          },
+          "names": {
+            "k": [
+              "root"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/redundant-parent-invalid",
+      "kind": "presentation",
+      "description": "redundant-parent-invalid",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; redundant-parent-invalid"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "a",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "alpha",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "bad",
+            "signer": "k",
+            "parents": [
+              "r",
+              "a"
+            ],
+            "name": "bad",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "bad": "INVALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "a"
+            ]
+          },
+          "names": {
+            "k": [
+              "alpha"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/rename",
+      "kind": "presentation",
+      "description": "rename",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; rename"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "a",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "alpha",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "a"
+            ]
+          },
+          "names": {
+            "k": [
+              "alpha"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/rename-all-heads",
+      "kind": "presentation",
+      "description": "rename-all-heads",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; rename-all-heads"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "a",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "alpha",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "b",
+            "signer": "k",
+            "parents": [
+              "r"
+            ],
+            "name": "beta",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "m",
+            "signer": "k",
+            "parents": [
+              "a",
+              "b"
+            ],
+            "name": "merged",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "a": "FULLY_VALID",
+            "b": "FULLY_VALID",
+            "m": "FULLY_VALID",
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "m"
+            ]
+          },
+          "names": {
+            "k": [
+              "merged"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/root",
+      "kind": "presentation",
+      "description": "root",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; root"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "r": "FULLY_VALID"
+          },
+          "heads": {
+            "k": [
+              "r"
+            ]
+          },
+          "names": {
+            "k": [
+              "root"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "v0/presentation/token-parent-invalid",
+      "kind": "presentation",
+      "description": "token-parent-invalid",
+      "provenance": {
+        "source": "review/phase2/REVIEW.md",
+        "status": "spec-derived-reviewed",
+        "locator": "r36 21,49; token-parent-invalid"
+      },
+      "input": {},
+      "expected": {
+        "disposition": "VERIFIED"
+      },
+      "presentation": {
+        "updates": [
+          {
+            "id": "r",
+            "signer": "k",
+            "parents": [],
+            "name": "root",
+            "kind": "DEVICE_UPDATE"
+          },
+          {
+            "id": "token",
+            "signer": "k",
+            "parents": [],
+            "name": "not-presentation",
+            "kind": "TOKEN_UPDATE"
+          },
+          {
+            "id": "cross",
+            "signer": "k",
+            "parents": [
+              "token"
+            ],
+            "name": "bad",
+            "kind": "DEVICE_UPDATE"
+          }
+        ],
+        "expected": {
+          "validation": {
+            "cross": "INVALID",
+            "r": "FULLY_VALID",
+            "token": "INVALID"
+          },
+          "heads": {
+            "k": [
+              "r"
+            ]
+          },
+          "names": {
+            "k": [
+              "root"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

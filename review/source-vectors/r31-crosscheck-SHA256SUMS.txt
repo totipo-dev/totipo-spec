@@ -1,0 +1,4 @@
+50fc8bb40a9bd2253d27cbafa70617c3a6de8d4455d822d959704fb4a9ac3283  R31Review.java
+18e7d28851e176cf1aeebe5e8a5bd4524a64c281fb298b69f39d568146e3777a  totp-vault-v0-r31-tlv-corpus.py
+641727de4921db28851eef5d92c552837cb48f9167fbcd5e2238a7bf5516ae88  r31-object-vectors.txt
+9888dfbccdea4033d1cf845680c93a30c4fc4175304db0ea50f73bb08bf9cf4f  r31-java-vector-crosscheck.py
