@@ -16,7 +16,7 @@
       in
       {
         formatter = pkgs.nixpkgs-fmt;
-        devShells.default = pkgs.mkShellNoCC {
+        devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             go
             gopls
@@ -30,6 +30,8 @@
                 gopls
                 golangci-lint
                 golangci-lint-langserver
+                libgcc
+                gcc
               ];
             })
           ];
