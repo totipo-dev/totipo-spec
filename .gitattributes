@@ -4,3 +4,5 @@
 # Reviewed artifacts and manifests are hashed as exact bytes. Never convert them.
 /vectors/** -text
 /review/** -text
+/requirements/*.json -text
+/requirements/*.sha256 -text

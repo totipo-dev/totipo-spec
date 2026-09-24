@@ -34,8 +34,10 @@ jobs:
       - name: Portable semantic, crypto, and interface packages
         working-directory: conformance
         run: go test -count=1 ./internal/... ./cmd/... ./reference/client ./reference/fault ./reference/localstate ./reference/storage
-      - name: Normative vector CLI (388 cases)
+      - name: Current normative vector corpus
         run: go run ./conformance/cmd/totipo-conformance ./vectors/v0
+      - name: Frozen v0-rc1 requirements profile (388 cases)
+        run: go run ./conformance/cmd/totipo-conformance --requirements requirements/v0-rc1.json
       - name: Independent Ed25519 arithmetic review
         run: go run ./review/ed25519/review.go
       - name: Frozen inventories

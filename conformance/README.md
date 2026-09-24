@@ -1,15 +1,20 @@
 # Totipo v0 Go conformance implementation
 
-This is an independent consumer of the r36 specification and pinned review artifacts. It implements the byte/crypto layers, strict Ed25519 profile, token/lifecycle and DEVICE_UPDATE models, application-use policy, and abstract durable-memory/publication state machines. Separate arithmetic and state oracles check new reviewed expectations. It is not a production vault client or proof that every Section 74 obligation has been satisfied.
+This is an independent consumer of the canonical r37 specification and pinned review artifacts. Revision 37 preserves the r36 protocol rules and bytes. It implements the byte/crypto layers, strict Ed25519 profile, token/lifecycle and DEVICE_UPDATE models, application-use policy, and abstract durable-memory/publication state machines. Separate arithmetic and state oracles check new reviewed expectations. It is not a production vault client or proof that every Section 74 obligation has been satisfied.
 
 From the repository root:
 
 ```sh
 go run ./conformance/cmd/totipo-conformance ./vectors/v0
 go run ./conformance/cmd/totipo-conformance --filter v0/bootstrap/ ./vectors/v0
+go run ./conformance/cmd/totipo-conformance --requirements requirements/v0-rc1.json
 ```
 
 The root `go.work` makes the requested root command work while the implementation module remains under `conformance/`. Filters may precede or follow the directory, including `v0/ed25519/`, `v0/lifecycle/`, `v0/recovery/`, and `v0/presentation/`. No matches, invalid artifacts, manifest mismatch, or case failure produce a nonzero exit status. Explicit blocked cases and missing required categories print BLOCKED and exit 2; they never count as PASS. The current 388-case abstract result is documented in [the Phase 2 report](../review/phase2/IMPLEMENTATION_REPORT.md); [the Phase 1 report](../review/phase1/IMPLEMENTATION_REPORT.md) preserves the historical initial checkpoint.
+
+The **corpus** is every current normative v0 case. A **requirements profile** is the frozen ID set and artifact hash target for a named release; [v0-rc1](../requirements/README.md) contains 388 IDs. A profile run validates its artifacts, selects only its required IDs, and checks all expected result counts. Extra corpus IDs do not expand it. `--requirements ... --filter PREFIX` labels the run **PARTIAL** and never prints complete profile conformance, even if every matching case passes. `--verify-only` validates profile integrity and case membership without executing cases; it cannot be combined with a filter. Profile artifact paths are resolved relative to the repository containing `requirements/`, regardless of the caller's working directory. An optional positional directory can supply a copy of the corpus, subject to the same integrity checks.
+
+**Reference integration evidence** covers implementation/platform behavior separately. Linux syscalls, local-state format, Go behavior, and crash-test counts are not additional portable profile requirements. Normal tests and CI never regenerate requirements profiles or normative vectors.
 
 ```sh
 go -C conformance fmt ./...

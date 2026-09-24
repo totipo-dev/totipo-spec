@@ -1,12 +1,12 @@
 # Totipo Vault Format v0
 
-**Status:** Byte-level-freeze candidate, revision 36  
+**Status:** v0 release candidate, revision 37  
 **Scope:** State model, synchronization semantics, cryptographic construction, bootstrap semantics, lifecycle-conflict semantics, presentation history, and recovery behavior.  
-**Still to freeze:** publication of the current lifecycle-oracle artifact, completion/publication of the mandatory cryptographic/TOTP/transition/recovery conformance corpus, and independent consumption of the semantic-object cryptographic vectors before interoperability is claimed.
+**Release status:** the v0 semantic model and byte-level format are frozen. The published conformance/reference evidence now covers the previously outstanding byte/crypto, strict-Ed25519, lifecycle/transition, recovery/security-memory, presentation-history, and Linux integration obligations described in Section 75. Remaining work is release-process and broader implementation assurance rather than unresolved v0 format design.
 
 **Project name:** Totipo. Frozen v0 protocol literals are not branding strings: the `TOTP-VAULT` bootstrap magic and the `TOTP-Vault/v0/...` domain-separation family retain their exact spellings and bytes as specified below. A conforming v0 implementation MUST NOT substitute `Totipo` or any other project/product name into those frozen literals.
 
-**Revision 36 changes:** adds explicit Section 49.1 cross-references to the two earlier presentation-history rules that permit abandonment of pending same-key `DEVICE_UPDATE` history. This is cross-reference clarification only. All r35 Totipo branding, semantic, operational-security, recovery, application-safety, wire-format, bootstrap, cryptographic, and consensus rules remain unchanged.
+**Revision 37 changes:** status/evidence bookkeeping only. r37 promotes the r36 byte-level-freeze candidate to a v0 release candidate after the Phase 2 abstract-conformance and Phase 3 Linux integration evidence completed without a normative contradiction. It updates the temporal wording in Sections 74-75 to reflect that evidence. No protocol byte, TLV grammar, cryptographic construction, semantic rule, consensus-validity rule, writer rule, recovery rule, application-safety rule, or interoperability requirement changes from r36.
 
 ---
 
@@ -2633,7 +2633,7 @@ These exclusions are semantic design choices, not missing parser features. Later
 
 ## 74. Required security, semantic, and conformance evidence
 
-Before byte-level v0 freeze, executable transition/conformance evidence MUST cover at least:
+The v0 conformance publication MUST cover at least:
 
 ```text
 field-model semantics:
@@ -2781,21 +2781,26 @@ Lifecycle-conflict reference-oracle outputs MUST include explainable conflict tu
 
 ---
 
-## 75. Remaining work before byte-level v0 freeze
+## 75. v0 release-candidate evidence and remaining release work
 
 
-Revision 36 is the Totipo byte-level-freeze candidate. It preserves every r34 wire byte and consensus accepted-history rule while incorporating the final review's cross-section consistency and operational-security clarifications: candidate routing, future-evidence durability, bootstrap password prechecks, known-history recovery endpoints, credential-consumption safety, hostile-filesystem handling, establishment/writer concurrency, local-security-memory assumptions, normative `VAULT_BINDING`, and pending device-presentation recovery. The independent Java-to-Python semantic-object TLV/envelope cross-consumption check and independent Java consumption of the r32 bootstrap Argon2id/AES-GCM vectors have completed without contradiction.
+Revision 37 is a status/evidence bookkeeping revision. The normative v0 protocol design remains the r36 design; r37 does not change its accepted-history set or any synchronized byte representation.
 
-The remaining work is conformance-evidence and publication work rather than byte-format design:
+The repository evidence current for this release candidate includes:
 
-1. implement/publish the current literal derived-state and lifecycle-conflict oracle from this document;
-2. run all retained pre-r28 semantic/transition corpora against the r36 model and classify every changed outcome;
-3. resolve any contradiction discovered by those regression passes;
-4. retain executable tests freezing the r36 context/field writer rule, lifecycle-resolution validation procedure, confirmation freshness procedure, durable recovery ordering, publication linearization, and presentation-recovery rules;
-5. complete/publish the mandatory object-crypto, Ed25519, TOTP, transition, degradation, rollback, presentation-history, resource-limit, bootstrap-publication, and password-input conformance vectors;
-6. retain at least two independent semantic-object TLV/envelope parsers/validators against the frozen corpus;
-7. independently consume the pinned semantic-object cryptographic vectors in another implementation before claiming full wire/crypto interoperability.
+1. a language-neutral v0 conformance corpus and Go consumer reporting **388 PASS / 0 FAIL / 0 BLOCKED**, covering canonical TLV/envelope framing, object crypto, bootstrap/password processing, common-prefix dispatch, TOTP, the strict Ed25519 acceptance profile, token/lifecycle transitions, recovery/security-memory traces, and `DEVICE_UPDATE` presentation history;
+2. independent semantic calculations and mutation-sensitive lifecycle tests, including a literal reference oracle, fixed-seed differential histories, JOIN/ancestry properties, and deliberately incorrect oracle variants that are rejected by named cases;
+3. independent consumption of the pinned semantic-object cryptographic vectors and bootstrap vectors, in addition to the earlier Java-to-Python semantic-object parser cross-check;
+4. a Linux/ext4 reference integration exercising real encrypted object ingestion/authorship, durable local security memory, immutable-object and `VAULT` publication, restart reconstruction, hostile filesystem entries, multi-process establishment/publication races, and **64 subprocess crash/restart cases across 52 named crash points**;
+5. preservation of the frozen specification/vector artifacts across that work, with no normative contradiction discovered.
 
-The canonical TLV/envelope boundary corpus, Java-to-Python semantic-object parser cross-check, r32 bootstrap vectors, and independent Java bootstrap-vector consumption are completed inputs to this remaining work and need not be redesigned absent a discovered contradiction.
+These results are conformance and reference-implementation evidence. They do not by themselves establish production readiness, physical power-loss durability, network/synchronization-provider guarantees, protected production key storage, cross-platform filesystem conformance, or an external security audit.
 
-Changes discovered during that work SHOULD be treated as specification bugs rather than opportunities to redesign the state model unless an actual contradiction is found.
+Remaining work before a final v0 release is release-process and broader assurance work rather than protocol-format design:
+
+1. publish a versioned conformance-requirement set for the release candidate, pinning the applicable specification/vector artifacts and required cases so later corpus growth does not retroactively change the meaning of the release;
+2. complete and record the intended release-candidate CI matrix for the release commit, keeping portable semantic/crypto evidence distinct from platform-specific filesystem evidence;
+3. perform any desired independent/external specification, cryptographic, and implementation review before declaring a final v0 release;
+4. continue production-client and additional-platform assurance separately from the normative v0 format.
+
+Any later contradiction discovered in the frozen v0 design SHOULD be treated as a specification bug requiring explicit errata/revision handling, not as permission to silently reinterpret existing v0 objects.

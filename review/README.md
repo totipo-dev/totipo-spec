@@ -12,6 +12,7 @@
 | [phase2/](phase2/IMPLEMENTATION_REPORT.md) | Abstract semantic/recovery implementation report, fixture review, case index, and review inventory |
 | [phase3/](phase3/README.md) | Linux integration report, recorded local execution results, and hashes identifying tested source |
 | [process/](process/README.md) | Archived implementation instructions and the original seed review index |
+| [releases/v0-rc1/](releases/v0-rc1/) | Release-candidate preparation [instructions](releases/v0-rc1/V0_RC1_AGENT_INSTRUCTIONS.md) and [requirements report](releases/v0-rc1/V0_RC1_REQUIREMENTS_REPORT.md); review evidence, not a published release |
 
 Some historical files intentionally retain older `totp-vault-*` names for provenance. Frozen literals such as `TOTP-VAULT` and `TOTP-Vault/v0/...` are likewise unchanged. Historical reports describe their own checkpoints, not necessarily today's coverage or CI configuration; see the [project README](../README.md) for the current overview.
 

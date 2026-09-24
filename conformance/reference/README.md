@@ -35,7 +35,7 @@ Future evidence remains visible after bypass and even after disappearance. Aggre
 
 ## Durable local state
 
-The adapter uses a small JSON snapshot with **no new database dependency**. JSON is a local implementation format, never a protocol/vector format. It contains the configured location, exact r36 HMAC root binding, establishment state, monotonic generation, remembered token/presentation heads, pending observations, abandonment/acknowledgement, future versions/bypass, and terminal-handoff facts.
+The adapter uses a small JSON snapshot with **no new database dependency**. JSON is a local implementation format, never a protocol/vector format. It contains the configured location, exact v0 HMAC root binding (unchanged in r37), establishment state, monotonic generation, remembered token/presentation heads, pending observations, abandonment/acknowledgement, future versions/bypass, and terminal-handoff facts.
 
 Each `Store.With` opens and exclusively `flock`s a stable `lock` inode, reloads the current snapshot, and holds the lock across the callback. Independent opens coordinate processes and goroutines; the lock file is never replaced. All cooperating clients for a configured vault must use the same lock domain. A callback may commit multiple times to make ordering explicit.
 

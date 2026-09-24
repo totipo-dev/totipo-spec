@@ -3,76 +3,132 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
+
 	"totipo/conformance/internal/corpus"
+	"totipo/conformance/internal/requirements"
 	"totipo/conformance/internal/runner"
 )
 
-func main() {
-	root := ""
-	filter := ""
-	args := os.Args[1:]
+func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
+
+const usage = "usage: totipo-conformance [--requirements FILE] [--filter PREFIX] [--verify-only] [VECTOR_DIRECTORY]"
+
+func run(args []string, out, errOut io.Writer) int {
+	fatal := func(err any) int { fmt.Fprintln(errOut, err); return 1 }
+	root, filter, profilePath := "", "", ""
+	filtered, verifyOnly := false, false
 	for len(args) > 0 {
 		a := args[0]
 		args = args[1:]
-		if a == "--filter" {
-			if len(args) == 0 {
-				fatal("--filter requires a prefix")
+		switch {
+		case a == "--filter" || a == "--requirements":
+			if len(args) == 0 || strings.HasPrefix(args[0], "--") {
+				return fatal(a + " requires a value")
 			}
-			filter = args[0]
+			if a == "--filter" {
+				filter, filtered = args[0], true
+			} else {
+				profilePath = args[0]
+			}
 			args = args[1:]
-		} else if strings.HasPrefix(a, "--filter=") {
-			filter = strings.TrimPrefix(a, "--filter=")
-		} else if root == "" && !strings.HasPrefix(a, "-") {
+		case strings.HasPrefix(a, "--filter="):
+			filter, filtered = strings.TrimPrefix(a, "--filter="), true
+		case strings.HasPrefix(a, "--requirements="):
+			profilePath = strings.TrimPrefix(a, "--requirements=")
+			if profilePath == "" {
+				return fatal("--requirements requires a value")
+			}
+		case a == "--verify-only":
+			verifyOnly = true
+		case root == "" && !strings.HasPrefix(a, "-"):
 			root = a
-		} else {
-			fatal("usage: totipo-conformance [--filter PREFIX] VECTOR_DIRECTORY")
+		default:
+			return fatal(usage)
 		}
 	}
-	if root == "" {
-		fatal("usage: totipo-conformance [--filter PREFIX] VECTOR_DIRECTORY")
+	if profilePath == "" && (root == "" || verifyOnly) || verifyOnly && filtered {
+		return fatal(usage)
 	}
-	cases, e := corpus.Load(root)
-	if e != nil {
-		fatal(e.Error())
+	var cases []corpus.Case
+	var profile *requirements.Profile
+	var err error
+	if profilePath != "" {
+		profile, err = requirements.Load(profilePath)
+		if err != nil {
+			return fatal(err)
+		}
+		repo, err := requirements.RepositoryRoot(profilePath)
+		if err != nil {
+			return fatal(err)
+		}
+		cases, err = profile.LoadCases(repo, root)
+		if err != nil {
+			return fatal(err)
+		}
+		if verifyOnly {
+			fmt.Fprintf(out, "VALID %s: integrity and %d required IDs verified; cases not executed\n", profile.Profile, len(cases))
+			return 0
+		}
+		if filtered {
+			fmt.Fprintf(out, "PARTIAL %s: diagnostic filter %q; not a complete profile-conformance run\n", profile.Profile, filter)
+		} else {
+			fmt.Fprintf(out, "Requirements profile %s: %d required cases\n", profile.Profile, len(cases))
+		}
+	} else {
+		cases, err = corpus.Load(root)
+		if err != nil {
+			return fatal(err)
+		}
 	}
-	pass, fail, blocked := 0, 0, 0
+	counts := requirements.Counts{}
 	coverage := map[string]int{}
 	for _, c := range cases {
 		coverage[strings.Split(c.ID, "/")[1]]++
 		if !strings.HasPrefix(c.ID, filter) {
 			continue
 		}
-		if e := runner.Run(c); e != nil {
-			if errors.Is(e, runner.ErrBlocked) {
-				blocked++
-				fmt.Printf("BLOCKED %s\n     %s\n", c.ID, e)
+		if err := runner.Run(c); err != nil {
+			if errors.Is(err, runner.ErrBlocked) {
+				counts.Blocked++
+				fmt.Fprintf(out, "BLOCKED %s\n     %s\n", c.ID, err)
 				continue
 			}
-			fail++
-			fmt.Printf("FAIL %s\n     %s\n     source: %s (%s)\n", c.ID, e, c.Provenance.Source, c.Provenance.Locator)
+			counts.Fail++
+			fmt.Fprintf(out, "FAIL %s\n     %s\n     source: %s (%s)\n", c.ID, err, c.Provenance.Source, c.Provenance.Locator)
 		} else {
-			pass++
-			fmt.Println("PASS", c.ID)
+			counts.Pass++
+			fmt.Fprintln(out, "PASS", c.ID)
 		}
 	}
-	for _, category := range []string{"ed25519", "lifecycle", "transitions", "recovery", "presentation"} {
-		prefix := "v0/" + category + "/"
-		if coverage[category] == 0 && (filter == "" || strings.HasPrefix(prefix, filter) || strings.HasPrefix(filter, prefix)) {
-			blocked++
-			fmt.Printf("BLOCKED %srequired-corpus\n     No cases supplied for required category\n", prefix)
+	// Current-corpus development mode retains its original coverage gates.
+	// Profile coverage comes from the frozen ID set, not future CLI policy.
+	if profile == nil {
+		for _, category := range []string{"ed25519", "lifecycle", "transitions", "recovery", "presentation"} {
+			prefix := "v0/" + category + "/"
+			if coverage[category] == 0 && (filter == "" || strings.HasPrefix(prefix, filter) || strings.HasPrefix(filter, prefix)) {
+				counts.Blocked++
+				fmt.Fprintf(out, "BLOCKED %srequired-corpus\n     No cases supplied for required category\n", prefix)
+			}
 		}
 	}
-	if pass+fail+blocked == 0 {
-		fatal("filter matched no cases")
+	if counts.Pass+counts.Fail+counts.Blocked == 0 {
+		return fatal("filter matched no cases")
 	}
-	fmt.Printf("PASS %d / FAIL %d / BLOCKED %d\n", pass, fail, blocked)
-	if fail > 0 {
-		os.Exit(1)
+	fmt.Fprintf(out, "PASS %d / FAIL %d / BLOCKED %d\n", counts.Pass, counts.Fail, counts.Blocked)
+	if counts.Fail > 0 {
+		return 1
 	}
-	if blocked > 0 {
-		os.Exit(2)
+	if counts.Blocked > 0 {
+		return 2
 	}
+	if profile != nil && !filtered {
+		if counts != profile.Requirements.Expected {
+			return fatal("profile result counts do not match expected counts")
+		}
+		fmt.Fprintln(out, "CONFORMANT", profile.Profile)
+	}
+	return 0
 }
-func fatal(s string) { fmt.Fprintln(os.Stderr, s); os.Exit(1) }
