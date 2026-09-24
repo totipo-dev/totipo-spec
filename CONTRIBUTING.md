@@ -16,4 +16,4 @@ sha256sum -c review/phase3/source.sha256
 
 Keep normative artifacts, generated/non-normative tests, and platform observations distinct. Explain any deliberate inventory/path update; preserve historical inputs and never run vector-writing maintenance commands as part of normal verification. Retain minimized fuzz regressions for review rather than treating them as normative expectations automatically.
 
-See [SECURITY.md](SECURITY.md) for the unresolved private reporting channel and [LICENSE-TODO.md](LICENSE-TODO.md) for pending license selection.
+See [SECURITY.md](SECURITY.md) for the unresolved private reporting channel. The project is licensed under the [Apache License 2.0](LICENSE).

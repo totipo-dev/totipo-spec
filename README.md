@@ -24,16 +24,17 @@ Linux integration evidence does not establish production readiness, power-loss c
 
 ## Run the checks
 
-Use **Go 1.23 or later**; CI tests the latest 1.23 patch and current stable Go. Linux integration tests require the documented local filesystem facilities; race tests also require a supported C compiler. From the repository root:
+Use **Go 1.23 or later** and **GNU Make**; CI tests the latest 1.23 patch and current stable Go. Linux integration tests require the documented local filesystem facilities; race tests also require a supported C compiler. From the repository root:
 
 ```sh
-mkdir -m 700 -p .phase3-test-tmp
-TMPDIR="$PWD/.phase3-test-tmp" go -C conformance test -count=1 -timeout=180s ./...
-TMPDIR="$PWD/.phase3-test-tmp" go -C conformance test -race -count=1 -timeout=300s ./...
-go run ./conformance/cmd/totipo-conformance ./vectors/v0
-(cd vectors/v0 && sha256sum -c manifest.sha256)
+make check        # Run all checks below
+
+make test         # Full suite, including Linux integration/crash tests
+make race         # Full suite with the race detector
+make conformance  # Expected: PASS 388 / FAIL 0 / BLOCKED 0
+make verify       # Vector and review checksums
 ```
 
-The repository-local `TMPDIR` keeps Linux integration tests on the repository's filesystem. For portable-only commands, review inventories, or fuzzing, see [conformance/README.md](conformance/README.md) and [conformance/FUZZING.md](conformance/FUZZING.md).
+The Makefile creates `.phase3-test-tmp/` and sets the repository-local `TMPDIR` to keep Linux integration tests on the repository's filesystem. The Nix development environment includes GNU Make; reload it after updating the flake. For the underlying commands, portable-only checks, or fuzzing, see [conformance/README.md](conformance/README.md) and [conformance/FUZZING.md](conformance/FUZZING.md).
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the unresolved [license selection](LICENSE-TODO.md) before contributing, reporting security issues, or reusing the material.
+Licensed under the [Apache License 2.0](LICENSE). See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md) for contribution and security reporting guidance.

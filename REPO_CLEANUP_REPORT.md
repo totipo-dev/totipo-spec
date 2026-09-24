@@ -7,7 +7,7 @@ This change is repository cleanup only. No protocol text, frozen literal, vector
 - `README.md`: project overview, authoritative paths, evidence boundaries, minimum Go version, and current test commands.
 - `CONTRIBUTING.md`: protocol/vector change discipline and verification commands.
 - `SECURITY.md`: private-reporting guidance with an explicit unresolved contact TODO.
-- `LICENSE-TODO.md`: records that no project license exists and requires maintainer selection; Apache-2.0 is only a candidate, not adopted.
+- `LICENSE-TODO.md`: recorded pending maintainer license selection at cleanup time. In a subsequent maintainer-authorized change, it was replaced by the standard Apache-2.0 text in [LICENSE](LICENSE), without a personal copyright notice, per-file headers, or a NOTICE file.
 - `.github/dependabot.yml`: weekly Go module and GitHub Actions update proposals; no automatic merging.
 - `review/process/README.md`: index and historical-context note for archived instructions and the seed index.
 - `REPO_CLEANUP_REPORT.md`: this review summary.
@@ -143,7 +143,7 @@ The temporary link-audit helper scans relative Markdown targets, excludes inline
 
 ## Remaining TODOs
 
-- Maintainer license selection and review of retained third-party rights; no license installed.
+- License selection was resolved after cleanup: the maintainer selected Apache-2.0, now in [LICENSE](LICENSE). Retained third-party material and dependencies remain subject to their own terms.
 - Private security-reporting address or advisory instructions; no contact invented.
 - Human review/commit of these cleanup changes, then a fresh remote CI run for the revised minimum/stable matrix and pinned actions. No remote workflow was triggered during this task.
 - Release/status work, any r37 bookkeeping, requirement-set versioning, `v0-rc1` tags, and GitHub Releases remain a separate follow-up. None was performed here.

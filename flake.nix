@@ -19,6 +19,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             go
+            gnumake
             gopls
             golangci-lint
             golangci-lint-langserver
@@ -27,6 +28,7 @@
             (jailed-agents.lib.${system}.makeJailedCodex {
               extraPkgs = with pkgs; [
                 go
+                gnumake
                 gopls
                 golangci-lint
                 golangci-lint-langserver
