@@ -1,19 +1,29 @@
 # Contributing
 
-The [v0 specification](spec/totipo-vault-format-v0.md) is normative. Go code is reference/conformance evidence, and historical material under [review/](review/README.md) is provenance unless the specification explicitly incorporates it.
+The [v1/r9 specification](spec/totipo-vault-format-v1.md) is normative. The Go
+consumer provides reference/conformance evidence and is not production code.
+Design reviews in `review/` are supporting evidence.
 
-Protocol changes need a clear rationale and corresponding vectors/tests. Do not casually change frozen v0 wire bytes or historical protocol literals. Never silently regenerate normative vector expectations to match an implementation. Document specification contradictions with the affected sections and a minimal reproducer rather than resolving them by implementation preference.
+Protocol changes need a rationale and corresponding cases. Do not silently alter
+wire bytes, semantic rules, or stable case IDs. Record contradictions with the
+affected sections, a reproducer, and the smallest proposed wording change.
+Never regenerate expectations merely to make a failing implementation pass.
 
-Use Go 1.23 or later. Before proposing changes, run the relevant tests and the checks in [README.md](README.md), plus the review inventories from the repository root:
+Use the preserved Nix development environment. Before proposing changes, run:
 
 ```sh
-gofmt -l conformance tools review/ed25519/review.go
-go -C conformance vet ./...
-sha256sum -c conformance/review-inventory.sha256
-sha256sum -c review/phase2/inventory.sha256
-sha256sum -c review/phase3/source.sha256
+gofmt -l conformance
+make check
+make race
+make fuzz
 ```
 
-Keep normative artifacts, generated/non-normative tests, and platform observations distinct. Explain any deliberate inventory/path update; preserve historical inputs and never run vector-writing maintenance commands as part of normal verification. Retain minimized fuzz regressions for review rather than treating them as normative expectations automatically.
+Run `go -C conformance vet ./...` with a writable Go cache, as described in the
+README. Normal verification reads the corpus; fixture generation is a separate,
+explicit maintenance action documented in [vectors/FORMAT.md](vectors/FORMAT.md).
+Review all byte changes and moving-profile checksum changes together. Preserve
+minimized fuzz regressions without automatically promoting them to normative
+vectors.
 
-See [SECURITY.md](SECURITY.md) for the unresolved private reporting channel. The project is licensed under the [Apache License 2.0](LICENSE).
+Report suspected vulnerabilities through the process in [SECURITY.md](SECURITY.md).
+The project is licensed under the [Apache License 2.0](LICENSE).

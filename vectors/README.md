@@ -1,38 +1,19 @@
 # v1 Conformance Vectors
 
-This directory is for the **current Totipo v1 protocol only**.
+The [manifest](manifest.json) lists 68 current v1/r9 cases, each with a permanent
+ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
+outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
+The [case plan](CASE_PLAN.md) records the original stable IDs; all are represented.
 
-Historical v0 vectors are intentionally not copied into the current `main` working tree. They remain available through historical Git references.
+Run `make conformance` to execute the corpus, or `make verify` to validate JSON
+contracts, file checksums, and the moving requirements profile. Neither command
+writes vectors. See [FORMAT.md](FORMAT.md) for the language-neutral data contract,
+fixed ECDSA fixture handling, and deliberate generation workflow.
 
-## Principles
+Exact expected bytes are normative where the manifest marks them normative.
+Synthetic future tails deliberately contain bytes that are not valid v1 body
+TLVs. The consumer authenticates them through the same 1024-byte envelope and
+parses only their frozen routing metadata.
 
-1. Case IDs are stable once consumed by an implementation.
-2. Byte vectors and semantic/state vectors are distinct.
-3. The manifest lists only vector cases that actually exist.
-4. Exact byte vectors are normative where marked `normative: true`.
-5. Semantic/state cases should be language-neutral.
-6. Vector generation must be deterministic except where a fixture deliberately supplies a fixed externally-generated signature.
-7. Writer-capacity cases reserve 72 DER-signature bytes even when the actual fixture signature is shorter.
-
-## Suggested structure
-
-```text
-vectors/
-    manifest.json
-    manifest.schema.json
-    routing/
-    encoding/
-    bootstrap/
-    crypto/
-    provenance/
-    token/
-    device/
-    graph/
-    candidate/
-    timestamp/
-    negative/
-```
-
-Start with routing/encoding because r9's frozen routing prefix is the compatibility contract future semantic versions must preserve.
-
-Do not create a frozen release requirements profile until the vector set has stabilized.
+These cases are moving pre-RC evidence. Passing them does not establish full
+application conformance, independent interoperability, or production readiness.

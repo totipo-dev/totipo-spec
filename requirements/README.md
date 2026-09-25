@@ -1,23 +1,15 @@
 # Requirements Profiles
 
-Do not freeze a release requirements profile yet.
+[`v1-pre-rc.json`](v1-pre-rc.json) is a **moving** profile for the implemented
+v1/r9 corpus. It pins every current case ID and case-file SHA-256, plus hashes of
+the specification, manifest, manifest schema, and case schema. `make verify`
+checks these pins; `make conformance` additionally executes every case.
 
-During vector development, the agent may create:
+The profile is created only from existing case files. IDs are stable once used
+by consumers. Changes to expected bytes or requirements need explicit review;
+normal checks never update the profile.
 
-```text
-requirements/v1-pre-rc.json
-```
-
-once real vector case IDs exist.
-
-`v1-pre-rc.json` is explicitly moving and may add/remove cases while the protocol evidence is being completed.
-
-Create a frozen release profile only when:
-
-- the normative vector bytes are frozen;
-- stable case IDs are frozen;
-- the Go reference/conformance consumer passes;
-- the first real/live Totipo implementation has independently consumed the portable vector set;
-- remaining review has no wire/semantic blocker.
-
-At that point create the release-candidate profile (for example `v1-rc1.json`) and never silently expand its required case set afterward.
+Do not freeze `v1-rc1.json` until the first live Totipo implementation has
+independently consumed the corpus, byte expectations have stabilized, and the
+remaining specification/security and platform reviews have no blocker. This
+repository provides one reference consumer, not two independent implementations.

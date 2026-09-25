@@ -1,4 +1,4 @@
-name: Totipo conformance
+name: Totipo v1 conformance
 on:
   push:
   pull_request:
@@ -6,8 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  portable:
-    name: Portable (${{ matrix.os }}, Go ${{ matrix.go }})
+  conformance:
     strategy:
       fail-fast: false
       matrix:
@@ -20,73 +19,27 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
           cache-dependency-path: conformance/go.sum
+      - name: Spec structure
+        run: |
+          python3 tools/check_spec.py
+          python3 tools/check_vectors.py
+          python3 -m unittest discover -s tools -p 'test_*.py'
       - name: Formatting
         shell: bash
+        run: test -z "$(gofmt -l conformance)"
+      - name: Vet and tests
+        working-directory: conformance
         run: |
-          unformatted=$(gofmt -l conformance tools review/ed25519/review.go)
-          if [ -n "$unformatted" ]; then
-            printf 'Files requiring gofmt:\n%s\n' "$unformatted"
-            exit 1
-          fi
-      - name: Vet
-        working-directory: conformance
-        run: go vet ./...
-      - name: Portable semantic, crypto, and interface packages
-        working-directory: conformance
-        run: go test -count=1 ./internal/... ./cmd/... ./reference/client ./reference/fault ./reference/localstate ./reference/storage
-      - name: Current normative vector corpus
-        run: go run ./conformance/cmd/totipo-conformance ./vectors/v0
-      - name: Frozen v0-rc1 requirements profile (388 cases)
-        run: go run ./conformance/cmd/totipo-conformance --requirements requirements/v0-rc1.json
-      - name: Independent Ed25519 arithmetic review
-        run: go run ./review/ed25519/review.go
-      - name: Frozen inventories
+          go vet ./...
+          go test -count=1 ./...
+      - name: Manifest-driven conformance
+        run: go run ./conformance/cmd/totipo-conformance -root .
+      - name: Manifest and profile integrity
+        run: go run ./conformance/cmd/totipo-conformance -root . -verify-only
+      - name: Race tests
         if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          (cd vectors/v0 && sha256sum -c manifest.sha256)
-          sha256sum -c conformance/review-inventory.sha256
-          sha256sum -c review/phase2/inventory.sha256
-          sha256sum -c review/phase3/source.sha256
-  linux-integration:
-    name: Linux storage and process tests (Go ${{ matrix.go }})
-    strategy:
-      fail-fast: false
-      matrix:
-        go: ['1.23.x', stable]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
-        with:
-          go-version: ${{ matrix.go }}
-          cache-dependency-path: conformance/go.sum
-      - name: Filesystem capability evidence
-        run: |
-          mkdir -m 700 -p "$GITHUB_WORKSPACE/.phase3-test-tmp"
-          uname -sr
-          stat -f -c '%T' "$GITHUB_WORKSPACE/.phase3-test-tmp"
-      - name: Integration, process death, and process races
-        shell: bash
-        run: |
-          set -o pipefail
-          TMPDIR="$GITHUB_WORKSPACE/.phase3-test-tmp" go -C conformance test ./reference/... -count=1 -timeout=180s -json | tee phase3-integration.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: always()
-        with:
-          name: linux-integration-${{ matrix.go }}
-          path: phase3-integration.json
-  race:
-    name: Linux race detector
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
-        with:
-          go-version: stable
-          cache-dependency-path: conformance/go.sum
-      - name: Race detector including storage and processes
-        shell: bash
-        run: |
-          mkdir -m 700 -p "$GITHUB_WORKSPACE/.phase3-test-tmp"
-          TMPDIR="$GITHUB_WORKSPACE/.phase3-test-tmp" go -C conformance test -race -count=1 -timeout=300s ./...
+        working-directory: conformance
+        run: go test -race -count=1 ./...
+      - name: Bounded parser fuzzing
+        if: runner.os == 'Linux'
+        run: make fuzz

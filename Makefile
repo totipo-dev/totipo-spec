@@ -1,41 +1,35 @@
 GO ?= go
+PYTHON ?= python3
+# Keep Go's build cache writable in the Nix jailed development environment.
+export GOCACHE ?= $(CURDIR)/.direnv/go-build
 
 .DEFAULT_GOAL := help
-.PHONY: help test race conformance conformance-v0-rc1 verify verify-requirements check
+.PHONY: help spec-check test race fuzz conformance verify check
 .NOTPARALLEL: check
 
 help:
-	@printf '%s\n' \
-	  'make test         Run the full test suite (Linux integration where supported)' \
-	  'make race         Run the full suite with the race detector' \
-	  'make conformance  Run the current normative corpus' \
-	  'make conformance-v0-rc1  Run the frozen v0-rc1 profile' \
-	  'make verify-requirements Verify profile integrity without running cases' \
-	  'make verify       Verify vector and review checksums' \
-	  'make check        Run all checks above'
+	@printf '%s\n' 'make spec-check  Check the v1/r9 specification structure' 'make test        Run Go tests' 'make conformance Run all v1 cases' 'make verify      Verify manifest, files, and moving profile' 'make check       Run all required checks' 'make race        Run Go race tests' 'make fuzz        Run bounded parser fuzzing'
 
-.phase3-test-tmp:
-	mkdir -m 700 -p "$@"
+spec-check:
+	$(PYTHON) tools/check_spec.py
 
-test: | .phase3-test-tmp
-	TMPDIR="$(CURDIR)/.phase3-test-tmp" $(GO) -C conformance test -count=1 -timeout=180s ./...
+test:
+	$(PYTHON) -m unittest discover -s tools -p 'test_*.py'
+	$(GO) -C conformance test -count=1 ./...
 
-race: | .phase3-test-tmp
-	TMPDIR="$(CURDIR)/.phase3-test-tmp" $(GO) -C conformance test -race -count=1 -timeout=300s ./...
+race:
+	$(GO) -C conformance test -race -count=1 ./...
+
+fuzz:
+	$(GO) -C conformance test ./internal/object -run '^$$' -fuzz FuzzDispatch -fuzztime 10s -parallel 2
+	$(GO) -C conformance test ./internal/cryptov1 -run '^$$' -fuzz FuzzOpen -fuzztime 10s -parallel 2
+	$(GO) -C conformance test ./internal/graph -run '^$$' -fuzz FuzzArrivalAndDisappearance -fuzztime 10s -parallel 2
 
 conformance:
-	$(GO) run ./conformance/cmd/totipo-conformance ./vectors/v0
-
-conformance-v0-rc1:
-	$(GO) run ./conformance/cmd/totipo-conformance --requirements requirements/v0-rc1.json
-
-verify-requirements:
-	$(GO) run ./conformance/cmd/totipo-conformance --requirements requirements/v0-rc1.json --verify-only
+	$(GO) run ./conformance/cmd/totipo-conformance -root .
 
 verify:
-	cd vectors/v0 && sha256sum -c manifest.sha256
-	sha256sum -c conformance/review-inventory.sha256
-	sha256sum -c review/phase2/inventory.sha256
-	sha256sum -c review/phase3/source.sha256
+	$(PYTHON) tools/check_vectors.py
+	$(GO) run ./conformance/cmd/totipo-conformance -root . -verify-only
 
-check: test race conformance conformance-v0-rc1 verify verify-requirements
+check: spec-check test conformance verify

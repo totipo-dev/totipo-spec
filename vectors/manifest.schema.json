@@ -32,7 +32,9 @@
           "kind",
           "normative",
           "path",
-          "expected"
+          "expected",
+          "spec_sections",
+          "sha256"
         ],
         "properties": {
           "id": {
@@ -62,13 +64,19 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "minItems": 1
           },
           "notes": {
             "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
           }
         }
-      }
+      },
+      "minItems": 1
     }
   }
 }

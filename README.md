@@ -10,11 +10,9 @@ The current specification is:
 
 - **Totipo Vault Format v1**
 - design revision **r9**
-- pre-vector / pre-release-candidate
+- moving pre-release-candidate conformance evidence
 
 The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
-
-Historical v0 material is intentionally not duplicated in the current working tree. It remains part of the repository's Git history and historical tags/releases/archive references. This keeps `main` focused on the protocol being actively implemented and tested.
 
 ## Design direction
 
@@ -50,13 +48,35 @@ The repository needs only one in-repo reference/conformance consumer: Go.
 
 The first real Totipo implementation developed against the frozen vectors should act as the independent interoperability consumer before a v1 release candidate is frozen. There is no requirement to build a second throwaway reference implementation.
 
+## Development and checks
+
+Use the preserved Nix development environment (`nix develop`, or direnv with the
+existing `.envrc`). It supplies Go, Make, Python, and the existing Go tooling.
+The Go module supports Go 1.23 or later; the schema checker uses Python 3.9 or later.
+
+```sh
+make spec-check
+make test
+make conformance
+make verify
+make check
+```
+
+`make race` and `make fuzz` provide additional checks. Make uses a writable Go
+build cache under `.direnv/` for the jailed development environment. When running
+Go directly there, set `GOCACHE="$PWD/.direnv/go-build"` from the repository root.
+The module tests run with `go -C conformance test ./...`.
+
+The [manifest](vectors/manifest.json) currently contains 68 cases. The
+[moving pre-RC profile](requirements/v1-pre-rc.json) pins their IDs and hashes;
+it is not a release or a frozen RC profile. Normal checks never regenerate cases.
+
+See the [vector contract](vectors/FORMAT.md), [Go consumer](conformance/README.md),
+and [implementation report](review/V1_VECTOR_IMPLEMENTATION_REPORT.md).
+
 ## Current next step
 
-Freeze exact v1 routing/encoding vectors first, then full cryptographic object vectors, then semantic graph/candidate-use cases.
-
-See:
-
-- [`vectors/README.md`](vectors/README.md)
-- [`vectors/CASE_PLAN.md`](vectors/CASE_PLAN.md)
-
-No v1 release-candidate profile should be frozen until the vector IDs and expected bytes have stabilized.
+Have the first live Totipo implementation independently consume the exact byte
+and semantic corpus, including fixed signature verification and future opaque
+routing. Complete platform persistence/crash and native P-256 interoperability
+evidence before freezing any v1 release-candidate profile.

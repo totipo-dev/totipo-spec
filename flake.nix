@@ -27,9 +27,11 @@
             gopls
             golangci-lint
             golangci-lint-langserver
+            python3
           ];
           packages = [
             (jailed-agents.lib.${system}.makeJailedCodex {
+              fwdEnv = [ "GOPATH" "GOBIN" ];
               extraPkgs = with pkgs; [
                 go
                 gnumake
@@ -38,6 +40,7 @@
                 golangci-lint-langserver
                 libgcc
                 gcc
+                python3
               ];
             })
           ];

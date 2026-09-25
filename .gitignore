@@ -1,7 +1,6 @@
-# Local integration-test scratch space and CI logs.
-.phase3-test-tmp/
-phase3-integration.json
-.direnv
+# Local development environment and caches.
+.direnv/
+__pycache__/
 
 # Local Go/test output, OS metadata, and Nix build links.
 coverage.out
