@@ -12,7 +12,7 @@ profile was created.
 ## Post-implementation acceptance update
 
 The implementation was subsequently committed as
-`8042729fe6b1c00fc57e284000f39c060d76d773` (`v1 work`), which is the cleanup
+`8042729fe6b1c00fc57e284000f39c060d76d773` (`v1 work`), which was the cleanup
 baseline for both local `main` and `origin/main`. The pushed
 [Totipo v1 conformance run](https://github.com/totipo-dev/totipo-spec/actions/runs/36197834195)
 completed successfully for that exact commit; this was verified through the
@@ -24,11 +24,11 @@ The GitHub refs API also confirms remote `archive/v0` at
 archive refs. Remote tags/releases were not enumerated during cleanup; none were
 modified. The earlier lack of SSH did not prevent these read-only HTTPS checks.
 
-Final cleanup retires the completed plan and temporary bundle, removes the
-transition inventory, makes three non-semantic rationale edits, and adds three
-RFC 6238 cases (18 known-answer rows). The current corpus contains **71 cases**;
-all 68 original case files remain byte-identical. See the
-[final cleanup report](V1_FINAL_CLEANUP_REPORT.md) for current validation and scope.
+Final cleanup retired the completed plan and temporary bundle, removed the
+transition inventory, made three non-semantic rationale edits, and added three
+RFC 6238 cases (18 known-answer rows). At that cleanup milestone the corpus contained
+**71 cases**; all 68 original case files remained byte-identical. See the
+[final cleanup report](V1_FINAL_CLEANUP_REPORT.md) for that milestone's validation and scope.
 The coverage and validation tables below describe the original 68-case handoff.
 
 ## Historical preservation and commits
@@ -60,13 +60,13 @@ was left for the user's manual commit. The user subsequently committed it as
 instruction/bundle inputs were included in that human commit and have now been
 removed in cleanup after verifying their reset-only purpose.
 
-## Current tree and implementation
+## Tree and implementation at the r9 baseline
 
-Current main contains the v1/r9 specification, seed design reviews, portable JSON
-cases, a moving requirements profile, the Go reference consumer, and current
-checks. No `vectors/v0`, v0 requirements profile, v0 conformance target, or v0
-protocol subtree remains in the tracked current tree. README and contribution
-instructions now describe the current implementation and development commands.
+At the r9 implementation baseline, main contained the v1/r9 specification, seed
+design reviews, portable JSON cases, a moving requirements profile, the Go reference
+consumer, and checks. No `vectors/v0`, v0 requirements profile, v0 conformance target,
+or v0 protocol subtree remained in the tracked tree. README and contribution
+instructions described that implementation and its development commands.
 
 The implementation separates:
 

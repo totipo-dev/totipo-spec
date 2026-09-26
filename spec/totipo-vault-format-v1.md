@@ -684,6 +684,8 @@ A future-family writer claiming rolling compatibility MUST ensure the required v
 
 If a compatibility frontier is too wide for one v1-family object, the future specification must preserve equivalent causal coverage using bounded v1-family compatibility objects.
 
+Rolling-upgrade interoperability with v1 is cooperative, not enforceable by v1 alone: an older v1 client can observe future-family state only to the extent that the future-family writer publishes the required authenticated v1-family compatibility projection.
+
 A future envelope family that does not publish such compatibility state makes no rolling-upgrade compatibility promise to v1 clients.
 
 ### 12.7 Compatibility boundary

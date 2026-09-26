@@ -171,3 +171,13 @@ vectors/cases/storage/v1.storage.objects-v1.001.json
 vectors/cases/storage/v1.storage.unknown-sibling-ignored.001.json
 vectors/cases/storage/v1.storage.wrong-size-not-opaque.001.json
 ```
+
+## Post-integration acceptance
+
+The r10 integration was subsequently committed and pushed as
+`86169f943752fa2b696300acf96d4b762acfc808` (`r10 updates`). The
+[remote Totipo v1 conformance run](https://github.com/totipo-dev/totipo-spec/actions/runs/36207631688)
+completed successfully for that exact commit, verified through the GitHub Actions
+API during the final editorial pass. The execution-time statements above describe
+the earlier handoff. This acceptance record does not claim CI for the later editorial
+change, which has not been pushed.
