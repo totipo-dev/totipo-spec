@@ -93,7 +93,7 @@ Results expose sorted durable heads, whole-state completeness/conflict,
 ordinary-use eligibility, authoring eligibility, explicit-candidate eligibility,
 mandatory candidate warning, integrity failure, and optional DEVICE presentation.
 `author` is eligibility for a fully confirmed write; this model does not implement
-confirmation epochs or publication. Unavailable/conflicting supported frontiers
+confirmation epochs or production publication. Unavailable/conflicting supported frontiers
 still require explicit whole-state confirmation under the specification.
 
 Graph values contain all TOKEN_VALUE fields, excluding author, timestamp,
@@ -172,3 +172,47 @@ on an ordinary supported baseline; sibling names add no warning or semantic bloc
 The in-memory model does not implement the live adapter's no-follow OS operations,
 crash durability, or concurrent filesystem rebindings. Those remain work for the
 first independent live consumer.
+
+## r12 hardening workflows
+
+Additional graph actions use the same symbolic authenticated-object model:
+
+- `remote-unavailable`: `reason` is absent, unreadable, wrong-size, aead, padding,
+  or object-id. Retain node/ancestry and remove value availability unless `flag`
+  indicates an exact trusted local copy. This never sets continuity unknown.
+- `local-security-corruption`: set continuity unknown and block all operations.
+- `reset-begin`: represents explicit user confirmation of lost continuity;
+  enter continuity unknown and start an empty replacement epoch.
+- `baseline-learn`: authenticate/persist into that replacement, with `flag: true`
+  simulating persistence failure. The old epoch remains until completion.
+- `reset-complete`: `flag` asserts a resource-complete scan. Compare the Boolean
+  `success`; completion also requires consistent, successfully persisted records.
+- `reclassify`: compatible processing of the exact `semantic_digest` replaces an
+  opaque-unscoped interpretation. `flag: true` simulates failed persistence.
+- `rename`: derive parents from all current supported DEVICE heads, regardless
+  of provenance. Compare `success`; any opaque current head blocks the operation.
+- `state-query`: compare sorted `known`, `device_heads`, the selected `id`'s
+  `parents`, `authoritative`, and `continuity_unknown` against `state_expect`.
+
+Values may specify `provenance` as VERIFIED, UNRESOLVED, or REJECTED; existing
+`verified` Boolean fixtures remain supported. Rejected/unresolved names are
+presentation-inert while their nodes remain causal. Disappearance cannot clear
+opaque-unscoped evidence. Reset deliberately loses prior security memory and
+rediscovering a still-present unscoped object keeps authority blocked.
+
+`publication` carries a vault-local `device_id`, `public_key`, and ordered events.
+`advertise` supplies identity/key and assertion_valid/verified/durable validation
+results; only a matching valid, verified, durable advertisement opens the gate.
+`publish-token` supplies durability; `report-success` checks `success` against
+both gates. `restart-workflow` begins a separate empty scenario, not a simulated
+production crash. TOKEN-before-DEVICE visibility is allowed; premature reported
+success is not. These fields are semantic workflow inputs, not wire fields.
+
+`signature-context` supplies one fixed signed `input`, its public key, canonical
+unsigned bytes, two distinct 32-byte vault contexts, and VERIFIED/REJECTED results
+under A/B. It reuses the original token-root fixture's fixed signature and public
+test key. Verification uses each explicit context; no fresh signing is required.
+Trusted native randomized ECDSA remains valid; no custom nonce generator is added.
+
+The fixture generator carries these eight hand-authored r12 files forward without
+rewriting them. Their expected results are independent of the state evaluator.

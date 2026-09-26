@@ -10,7 +10,7 @@ assert [int(n) for n in re.findall(r"^## (\d+)\.", s, re.M)] == list(range(1, 59
 for heading in [
     "## 54. Core invariants",
     "## 55. Required conformance evidence for v1",
-    "## 56. Open work after r11",
+    "## 56. Open work after r12",
     "## 57. v0 concepts intentionally absent from v1",
 ]:
     assert heading in norm, heading
@@ -19,7 +19,7 @@ allocation = norm.split("#### OBJECT_VERSION allocation", 1)[1].split("### 42.2"
 for concept in [
     r"published.*specification.*process",
     r"semantic grammars.*envelope family",
-    r"r11\s+assigns\s+`0x01`",
+    r"r12\s+assigns\s+`0x01`",
     r"[Aa]ll other values.*unassigned",
     r"MUST NOT.*independently assign.*interoperable/shared-vault.*published.*specification",
     r"no private-use or experimental.*OBJECT_VERSION.*range",
@@ -37,16 +37,32 @@ for concept in [
 assert not re.search(r"^## .*Migration from v0", norm, re.M)
 assert "Migration creates a new v1 vault" not in norm
 
-assert re.search(r"^### v1/r11$", s.split("## 58. Revision history", 1)[1], re.M)
+assert re.search(r"^### v1/r12$", s.split("## 58. Revision history", 1)[1], re.M)
+
+assert "### v1/r11" in s
+
+# Presence checks deliberately do not interpret prose as executable rules.
+for concept in [
+    r"OPAQUE_UNSCOPED.*?active.*?current local continuity epoch",
+    r"explicit user-directed continuity reset",
+    r"rename frontier.*?complete current.*?supported DEVICE frontier",
+    r"UNRESOLVED.*?REJECTED.*?presentation-inert",
+    r"synchronized bytes at a known.*?MUST NOT cause `LOCAL_CONTINUITY_UNKNOWN`",
+    r"local graph/security records are corrupt.*?enter `LOCAL_CONTINUITY_UNKNOWN`",
+    r"ECDSA signing MUST.*?cryptographically secure.*?RFC 6979.*?MUST NOT add ad-hoc",
+    r"first.*?successful TOKEN publication.*?DEVICE.*?durably published",
+    r"K_signature_context.*?binds provenance to one vault root",
+]:
+    assert re.search(concept, norm, re.S), concept
 
 required = [
-    "**Revision:** r11",
-    "**Revision 11 summary:**",
+    "**Revision:** r12",
+    "**Revision 12 summary:**",
     "objects-v1/",
     "Every valid object in objects-v1/ is exactly 1024 bytes.",
     "OBJECT_VERSION versions semantics inside the v1 envelope family",
     "Only direct regular-file children of `objects-v1/`",
-    "Unknown sibling family names/files are not authenticated semantic evidence.",
+    "An unknown sibling family namespace is likewise not authenticated semantic evidence.",
     "A candidate in `objects-v1/` with any file length other than exactly 1024 bytes is invalid current v1-family storage evidence.",
     "It MUST NOT by itself create `OPAQUE_ROUTABLE` or `OPAQUE_UNSCOPED`",
     "A future envelope family that claims rolling-upgrade interoperability with v1 MUST maintain a v1-family compatibility projection in `objects-v1/`",
@@ -75,4 +91,4 @@ for x in [
 
 assert norm.count("| `0x0200` | `DEVICE_ID` |") == 1
 assert "Unrelated tokens continue normal ordinary use and authorship" in norm
-print("PASS: Totipo v1/r11 structural spec checks")
+print("PASS: Totipo v1/r12 structural spec checks")

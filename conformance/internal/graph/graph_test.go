@@ -83,3 +83,54 @@ func FuzzArrivalAndDisappearance(f *testing.F) {
 		}
 	})
 }
+
+func TestResetRequiresCompletePersistedConsistentBaseline(t *testing.T) {
+	for _, failure := range []string{"incomplete", "persistence", "integrity"} {
+		t.Run(failure, func(t *testing.T) {
+			s := New()
+			old := Node{ID: "old", Class: "OPAQUE_UNSCOPED", Digest: "old"}
+			if e := s.Learn(old, nil, true); e != nil {
+				t.Fatal(e)
+			}
+			s.BeginReset()
+			n := Node{ID: "new", Class: "SUPPORTED_VALID", Type: "TOKEN", Identity: "T", Digest: "new"}
+			if e := s.BaselineLearn(n, nil, failure != "persistence"); e != nil {
+				t.Fatal(e)
+			}
+			if failure == "integrity" {
+				n.Digest = "conflicting"
+				if e := s.BaselineLearn(n, nil, true); e != ErrIntegrity {
+					t.Fatal("missing integrity failure")
+				}
+			}
+			if s.FinishReset(failure != "incomplete") || s.BaseSafe() || len(s.Nodes) != 1 || s.Nodes["old"].Digest != "old" {
+				t.Fatal("failed scan replaced epoch or enabled operations")
+			}
+		})
+	}
+}
+
+func TestReclassificationRequiresExactBytesAndPersistence(t *testing.T) {
+	for _, failure := range []string{"different-bytes", "persistence"} {
+		t.Run(failure, func(t *testing.T) {
+			s := New()
+			n := Node{ID: "u", Class: "OPAQUE_UNSCOPED", Digest: "exact"}
+			if e := s.Learn(n, nil, true); e != nil {
+				t.Fatal(e)
+			}
+			n.Class = "OPAQUE_ROUTABLE"
+			n.Type = "TOKEN"
+			n.Identity = "T"
+			if failure == "different-bytes" {
+				n.Digest = "different"
+			}
+			e := s.Reclassify(n, nil, failure != "persistence")
+			if (e == ErrIntegrity) != (failure == "different-bytes") {
+				t.Fatal(e)
+			}
+			if s.Authoritative() || s.BaseSafe() || s.Nodes["u"].Class != "OPAQUE_UNSCOPED" {
+				t.Fatal("unsafe reclassification cleared evidence")
+			}
+		})
+	}
+}

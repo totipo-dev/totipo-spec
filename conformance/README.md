@@ -1,7 +1,7 @@
 # Go v1 reference/conformance consumer
 
 This module supports Go 1.23 or later and is the single in-repository reference
-consumer for Totipo v1/r11. It is deliberately not a production client.
+consumer for Totipo v1/r12. It is deliberately not a production client.
 
 From the repository root:
 
@@ -59,3 +59,11 @@ authenticated compatibility assertions in `objects-v1/`; unknown sibling namespa
 names are not authenticated future-version evidence. Storage cases reuse existing
 envelope fixtures, authenticate them, and feed only supported/opaque authenticated
 observations into the same graph evaluator. See the [r10 report](../review/V1_R10_INTEGRATION_REPORT.md).
+
+The r12 model keeps DEVICE causality separate from authenticated friendly names:
+rename includes all supported heads, while only verified readable heads provide
+names. Remote byte corruption retains durable nodes; local security-memory
+corruption blocks all use. Opaque-unscoped disappearance does not clear evidence.
+Explicit reset builds a complete replacement baseline and deliberately abandons
+prior continuity guarantees. A separate small publication workflow checks the
+first DEVICE advertisement gate; it is not a production publication system.

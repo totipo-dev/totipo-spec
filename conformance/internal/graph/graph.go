@@ -35,6 +35,7 @@ type Value struct {
 	Secret      string `json:"secret_hex"`
 	DisplayName string `json:"display_name,omitempty"`
 	Verified    bool   `json:"verified,omitempty"`
+	Provenance  string `json:"provenance,omitempty"`
 }
 type State struct {
 	Nodes               map[string]Node
@@ -42,6 +43,7 @@ type State struct {
 	ContinuityUnknown   bool
 	PersistenceBlocked  bool
 	DiscoveryIncomplete bool
+	replacement         *State
 }
 
 func New() *State { return &State{Nodes: map[string]Node{}, Available: map[string]Value{}} }
@@ -71,6 +73,69 @@ func (s *State) Learn(n Node, v *Value, persist bool) error {
 	return nil
 }
 func (s *State) Disappear(id string) { delete(s.Available, id) }
+
+// RemoteUnavailable never changes durable security knowledge. A trusted exact
+// local copy may continue supplying the value despite hostile synchronized bytes.
+func (s *State) RemoteUnavailable(id string, trustedCopy bool) {
+	if !trustedCopy {
+		s.Disappear(id)
+	}
+}
+
+func (s *State) CorruptSecurityMemory() { s.ContinuityUnknown = true }
+
+// BeginReset represents explicit user confirmation of lost continuity guarantees.
+// The old epoch remains intact until a complete, successfully persisted scan.
+func (s *State) BeginReset() {
+	s.ContinuityUnknown = true
+	s.replacement = New()
+}
+func (s *State) BaselineLearn(n Node, v *Value, persist bool) error {
+	if s.replacement == nil {
+		return errors.New("reset not started")
+	}
+	return s.replacement.Learn(n, v, persist)
+}
+func (s *State) FinishReset(complete bool) bool {
+	if s.replacement == nil || !complete || !s.replacement.BaseSafe() {
+		return false
+	}
+	*s = *s.replacement
+	return true
+}
+
+// Reclassify models compatible reprocessing of the exact authenticated object;
+// Digest represents its immutable semantic bytes, not its old interpretation.
+func (s *State) Reclassify(n Node, v *Value, persist bool) error {
+	old, ok := s.Nodes[n.ID]
+	if !ok || old.Class != "OPAQUE_UNSCOPED" || old.Digest == "" || old.Digest != n.Digest ||
+		(n.Class != "SUPPORTED_VALID" && n.Class != "OPAQUE_ROUTABLE") {
+		s.ContinuityUnknown = true
+		return ErrIntegrity
+	}
+	if !persist {
+		s.PersistenceBlocked = true
+		return nil
+	}
+	delete(s.Nodes, n.ID)
+	return s.Learn(n, v, true)
+}
+
+func (s *State) Rename(n Node, v Value) bool {
+	if !s.Authoritative() || n.Type != "DEVICE" || n.Class != "SUPPORTED_VALID" || !verified(v) {
+		return false
+	}
+	heads := s.Heads("DEVICE", n.Identity)
+	for _, id := range heads {
+		if s.Nodes[id].Class != "SUPPORTED_VALID" {
+			return false
+		}
+	}
+	n.Parents = heads
+	return s.Learn(n, &v, true) == nil
+}
+
+func verified(v Value) bool { return v.Provenance == "VERIFIED" || (v.Provenance == "" && v.Verified) }
 func (s *State) Edge(child, parent string) string {
 	c, ok := s.Nodes[child]
 	if !ok {
@@ -176,6 +241,7 @@ func (s *State) Evaluate(identity, candidate, device string) Result {
 		}
 		v.DisplayName = ""
 		v.Verified = false
+		v.Provenance = ""
 		b, _ := json.Marshal(v)
 		values[string(b)] = v
 	}
@@ -212,13 +278,13 @@ func (s *State) Evaluate(identity, candidate, device string) Result {
 				complete = false
 				break
 			}
-			if !ok || !v.Verified {
+			if !ok {
 				complete = false
-			} else {
+			} else if verified(v) {
 				names[v.DisplayName] = true
 			}
 		}
-		if complete {
+		if complete && len(names) > 0 {
 			r.Presentation = "VERIFIED"
 			if len(names) > 1 {
 				r.Presentation = "CONFLICT"

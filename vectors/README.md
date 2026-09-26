@@ -1,6 +1,6 @@
 # v1 Conformance Vectors
 
-The [manifest](manifest.json) lists 77 current v1/r11 cases, each with a permanent
+The [manifest](manifest.json) lists 85 current v1/r12 cases, each with a permanent
 ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
 outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
 The manifest is the live case contract; all original planned IDs are represented.
@@ -25,3 +25,8 @@ Six r10 environment cases cover exact `objects-v1/` discovery, ignored entry nam
 and types, wrong sizes, ignored sibling namespaces, and future-family coexistence
 with/without a v1 compatibility assertion. Existing authenticated fixtures are
 referenced by case ID; their bytes are not duplicated or changed.
+
+Eight r12 cases cover sticky opaque-unscoped evidence and deliberate continuity
+reset, DEVICE convergence across rejected/unresolved heads, remote versus local
+corruption, initial DEVICE publication, and signature-context vault binding.
+The original 77 case files remain byte-identical.

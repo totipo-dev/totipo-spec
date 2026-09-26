@@ -80,22 +80,24 @@ type StorageCase struct {
 	Want          StorageExpected `json:"expect"`
 }
 type Case struct {
-	Storage   *StorageCase `json:"storage,omitempty"`
-	fixtures  map[string]Case
-	TOTP      *TOTP          `json:"totp,omitempty"`
-	Format    string         `json:"format"`
-	ID        string         `json:"id"`
-	Operation string         `json:"operation"`
-	Expected  string         `json:"expected"`
-	Input     *object.Object `json:"input,omitempty"`
-	Semantic  string         `json:"semantic_hex,omitempty"`
-	Root      string         `json:"root_hex,omitempty"`
-	PublicKey string         `json:"public_key_hex,omitempty"`
-	Crypto    *Crypto        `json:"crypto,omitempty"`
-	Future    *Future        `json:"future,omitempty"`
-	Size      *Size          `json:"size,omitempty"`
-	Bootstrap *Bootstrap     `json:"bootstrap,omitempty"`
-	Graph     *GraphCase     `json:"graph,omitempty"`
+	Context     *SignatureContextCase `json:"signature_context,omitempty"`
+	Publication *PublicationCase      `json:"publication,omitempty"`
+	Storage     *StorageCase          `json:"storage,omitempty"`
+	fixtures    map[string]Case
+	TOTP        *TOTP          `json:"totp,omitempty"`
+	Format      string         `json:"format"`
+	ID          string         `json:"id"`
+	Operation   string         `json:"operation"`
+	Expected    string         `json:"expected"`
+	Input       *object.Object `json:"input,omitempty"`
+	Semantic    string         `json:"semantic_hex,omitempty"`
+	Root        string         `json:"root_hex,omitempty"`
+	PublicKey   string         `json:"public_key_hex,omitempty"`
+	Crypto      *Crypto        `json:"crypto,omitempty"`
+	Future      *Future        `json:"future,omitempty"`
+	Size        *Size          `json:"size,omitempty"`
+	Bootstrap   *Bootstrap     `json:"bootstrap,omitempty"`
+	Graph       *GraphCase     `json:"graph,omitempty"`
 }
 type Future struct {
 	Routing object.Routing `json:"routing"`
@@ -144,12 +146,45 @@ type Query struct {
 	Device    string `json:"device,omitempty"`
 }
 type Step struct {
-	Action         string        `json:"action"`
-	Node           *graph.Node   `json:"node,omitempty"`
-	Value          *graph.Value  `json:"value,omitempty"`
-	ID             string        `json:"id,omitempty"`
-	Flag           bool          `json:"flag,omitempty"`
-	Query          *Query        `json:"query,omitempty"`
-	Want           *graph.Result `json:"expect,omitempty"`
-	IntegrityError bool          `json:"integrity_error,omitempty"`
+	StateWant      *StateExpected `json:"state_expect,omitempty"`
+	Success        *bool          `json:"success,omitempty"`
+	Reason         string         `json:"reason,omitempty"`
+	Action         string         `json:"action"`
+	Node           *graph.Node    `json:"node,omitempty"`
+	Value          *graph.Value   `json:"value,omitempty"`
+	ID             string         `json:"id,omitempty"`
+	Flag           bool           `json:"flag,omitempty"`
+	Query          *Query         `json:"query,omitempty"`
+	Want           *graph.Result  `json:"expect,omitempty"`
+	IntegrityError bool           `json:"integrity_error,omitempty"`
+}
+
+// StateExpected exposes durable topology separately from presentation and values.
+type StateExpected struct {
+	Known             []string `json:"known"`
+	DeviceHeads       []string `json:"device_heads"`
+	Parents           []string `json:"parents"`
+	Authoritative     bool     `json:"authoritative"`
+	ContinuityUnknown bool     `json:"continuity_unknown"`
+}
+type SignatureContextCase struct {
+	A        string `json:"context_a_hex"`
+	B        string `json:"context_b_hex"`
+	Unsigned string `json:"unsigned_semantic_hex"`
+	UnderA   string `json:"under_a"`
+	UnderB   string `json:"under_b"`
+}
+type PublicationCase struct {
+	DeviceID  string             `json:"device_id"`
+	PublicKey string             `json:"public_key"`
+	Events    []PublicationEvent `json:"events"`
+}
+type PublicationEvent struct {
+	Action    string `json:"action"`
+	DeviceID  string `json:"device_id,omitempty"`
+	PublicKey string `json:"public_key,omitempty"`
+	Valid     bool   `json:"assertion_valid,omitempty"`
+	Verified  bool   `json:"verified,omitempty"`
+	Durable   bool   `json:"durable,omitempty"`
+	Success   *bool  `json:"success,omitempty"`
 }

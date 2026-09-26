@@ -33,7 +33,7 @@ var private = func() *ecdsa.PrivateKey {
 }()
 var public = cryptov1.PublicBytes(&private.PublicKey)
 var deviceID = object.DeviceID(public)
-var manifest = vectors.Manifest{Format: "totipo-vector-manifest-v1", Protocol: "totipo-v1", Revision: "r11"}
+var manifest = vectors.Manifest{Format: "totipo-vector-manifest-v1", Protocol: "totipo-v1", Revision: "r12"}
 
 func must(e error) {
 	if e != nil {
@@ -331,7 +331,7 @@ func profile() {
 		must(e)
 		return vectors.Hash(b)
 	}
-	p := vectors.Profile{Format: "totipo-requirements-v1", Status: "moving-pre-rc", Protocol: "totipo-v1", Revision: "r11", ManifestSHA256: hashFile("vectors/manifest.json"), SpecSHA256: hashFile("spec/totipo-vault-format-v1.md"), SchemaSHA256: hashFile("vectors/manifest.schema.json"), CaseSchemaSHA256: hashFile("vectors/case.schema.json")}
+	p := vectors.Profile{Format: "totipo-requirements-v1", Status: "moving-pre-rc", Protocol: "totipo-v1", Revision: "r12", ManifestSHA256: hashFile("vectors/manifest.json"), SpecSHA256: hashFile("spec/totipo-vault-format-v1.md"), SchemaSHA256: hashFile("vectors/manifest.schema.json"), CaseSchemaSHA256: hashFile("vectors/case.schema.json")}
 	for _, e := range manifest.Cases {
 		p.Required = append(p.Required, vectors.Pin{ID: e.ID, SHA256: e.SHA256})
 	}
@@ -345,6 +345,7 @@ func main() {
 	graphCases()
 	totpCases()
 	storageCases()
+	hardeningCases()
 	profile()
 	fmt.Printf("wrote %d cases and moving pre-RC profile\n", len(manifest.Cases))
 }

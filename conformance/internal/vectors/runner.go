@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"totipo/conformance/internal/cryptov1"
 	"totipo/conformance/internal/graph"
@@ -62,7 +63,7 @@ func Read(root string) (Manifest, []Case, error) {
 	if e = Decode(b, &m); e != nil {
 		return m, nil, e
 	}
-	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r11" || len(m.Cases) == 0 {
+	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r12" || len(m.Cases) == 0 {
 		return m, nil, fmt.Errorf("invalid manifest header or empty corpus")
 	}
 	seen, paths := map[string]bool{}, map[string]bool{}
@@ -123,6 +124,23 @@ func Read(root string) (Manifest, []Case, error) {
 	return m, cases, nil
 }
 func ValidateShape(c Case, kind string) error {
+	if c.Operation == "signature-context" || c.Operation == "publication" {
+		if c.Expected != "PASS" || c.Crypto != nil || c.Graph != nil || c.Storage != nil || c.TOTP != nil || c.Size != nil || c.Bootstrap != nil || c.Future != nil || c.Root != "" || c.Semantic != "" {
+			return fmt.Errorf("mixed hardening payload")
+		}
+		if c.Operation == "signature-context" {
+			if kind != "bytes" || c.Context == nil || c.Input == nil || c.PublicKey == "" || c.Publication != nil {
+				return fmt.Errorf("invalid signature context payload")
+			}
+		} else if kind != "semantic" || c.Publication == nil || len(c.Publication.Events) == 0 || c.Context != nil || c.Input != nil || c.PublicKey != "" {
+			return fmt.Errorf("invalid publication payload")
+		}
+		return nil
+	}
+	if c.Context != nil || c.Publication != nil {
+		return fmt.Errorf("unexpected hardening payload")
+	}
+
 	if c.Operation != "storage" && c.Storage != nil {
 		return fmt.Errorf("unexpected storage payload")
 	}
@@ -175,7 +193,7 @@ func VerifyProfile(root string, m Manifest) error {
 	if e = Decode(b, &p); e != nil {
 		return e
 	}
-	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r11" || len(p.Required) != len(m.Cases) {
+	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r12" || len(p.Required) != len(m.Cases) {
 		return fmt.Errorf("invalid moving profile")
 	}
 	for file, want := range map[string]string{"vectors/manifest.json": p.ManifestSHA256, "spec/totipo-vault-format-v1.md": p.SpecSHA256, "vectors/manifest.schema.json": p.SchemaSHA256, "vectors/case.schema.json": p.CaseSchemaSHA256} {
@@ -196,6 +214,10 @@ func VerifyProfile(root string, m Manifest) error {
 }
 func Run(c Case) error {
 	switch c.Operation {
+	case "signature-context":
+		return runSignatureContext(c)
+	case "publication":
+		return runPublication(c)
 	case "storage":
 		return runStorage(c)
 	case "totp":
@@ -435,6 +457,54 @@ func runGraph(c Case) error {
 			e = s.Learn(*step.Node, step.Value, step.Action == "learn")
 		case "disappear":
 			s.Disappear(step.ID)
+		case "remote-unavailable":
+			switch step.Reason {
+			case "absent", "unreadable", "wrong-size", "aead", "padding", "object-id":
+			default:
+				return fmt.Errorf("unknown remote failure")
+			}
+			s.RemoteUnavailable(step.ID, step.Flag)
+		case "local-security-corruption":
+			s.CorruptSecurityMemory()
+		case "reset-begin":
+			s.BeginReset()
+		case "baseline-learn":
+			if step.Node == nil {
+				return fmt.Errorf("missing baseline node")
+			}
+			e = s.BaselineLearn(*step.Node, step.Value, !step.Flag)
+		case "reset-complete":
+			if step.Success == nil || s.FinishReset(step.Flag) != *step.Success {
+				return fmt.Errorf("reset result mismatch")
+			}
+			checks++
+		case "reclassify":
+			if step.Node == nil {
+				return fmt.Errorf("missing reclassification node")
+			}
+			e = s.Reclassify(*step.Node, step.Value, !step.Flag)
+		case "rename":
+			if step.Node == nil || step.Value == nil || step.Success == nil {
+				return fmt.Errorf("missing rename input")
+			}
+			if s.Rename(*step.Node, *step.Value) != *step.Success {
+				return fmt.Errorf("rename result mismatch")
+			}
+			checks++
+		case "state-query":
+			if step.StateWant == nil || step.Query == nil {
+				return fmt.Errorf("missing state expectation")
+			}
+			got := StateExpected{Known: []string{}, DeviceHeads: s.Heads("DEVICE", step.Query.Device), Parents: []string{}, Authoritative: s.Authoritative(), ContinuityUnknown: s.ContinuityUnknown}
+			for id := range s.Nodes {
+				got.Known = append(got.Known, id)
+			}
+			sort.Strings(got.Known)
+			got.Parents = append(got.Parents, s.Nodes[step.ID].Parents...)
+			if !reflect.DeepEqual(got, *step.StateWant) {
+				return fmt.Errorf("step %d state: got %+v want %+v", i, got, *step.StateWant)
+			}
+			checks++
 		case "discovery-incomplete":
 			s.DiscoveryIncomplete = step.Flag
 		case "continuity-unknown":

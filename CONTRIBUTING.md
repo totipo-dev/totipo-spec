@@ -1,6 +1,6 @@
 # Contributing
 
-The [v1/r11 specification](spec/totipo-vault-format-v1.md) is normative. The Go
+The [v1/r12 specification](spec/totipo-vault-format-v1.md) is normative. The Go
 consumer provides reference/conformance evidence and is not production code.
 Design reviews in `review/` are supporting evidence.
 

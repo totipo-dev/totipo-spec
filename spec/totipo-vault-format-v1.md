@@ -1,15 +1,13 @@
 # Totipo Vault Format v1
 
-**Status:** design draft, revision 11  
+**Status:** design draft, revision 12  
 **Protocol version:** 1  
-**Revision:** r11  
+**Revision:** r12  
 **Scope:** encrypted append-only TOTP vault format, complete-state token assertions, token-local causal history, device presentation history, durable local rollback evidence, bootstrap semantics, cryptographic construction, canonical encoding, and writer/application safety.
 
 **Historical note:** Earlier Totipo design work used a v0 draft. It was never released as an implemented/deployed protocol and is not a supported predecessor of v1. v1 defines no migration protocol from v0; historical v0 draft artifacts are outside the v1 protocol.
 
-**Revision 11 summary:** v1/r11 is a traceability/governance revision. It records the cooperative nature of future-family rolling compatibility, formalizes `OBJECT_VERSION` allocation, removes the fictitious deployed-v0 migration obligation, and aligns revision history with the current body. It introduces no wire-format, crypto, storage-family, or runtime semantic changes.
-
-**Revision 10 summary:** v1/r10 makes the envelope-family boundary explicit in storage. The Totipo v1 envelope family owns the exact top-level namespace `objects-v1/`; every candidate in that namespace uses the fixed 1024-byte v1-family envelope and frozen routing contract. `OBJECT_VERSION` continues to version semantics inside that family. A genuinely new envelope/storage family uses a different sibling namespace (for example `objects-v2/`) and is not parsed or trusted merely because that directory exists. A future family that claims rolling-upgrade interoperability with v1 must publish authenticated v1-family compatibility assertions into `objects-v1/`, so old clients can degrade through the existing `OPAQUE_ROUTABLE` machinery rather than going blind.
+**Revision 12 summary:** v1/r12 hardens the state-machine and provenance rules without changing the wire format. It defines the lifecycle and explicit recovery semantics for `OPAQUE_UNSCOPED` evidence, makes DEVICE convergence incorporate all supported current DEVICE heads regardless of provenance status, distinguishes hostile synchronized-byte corruption from local durable-security-memory corruption, requires cryptographically safe native ECDSA nonce generation, requires publication of the local DEVICE advertisement by first TOKEN success, and documents the vault-binding purpose of `K_signature_context`. It also incorporates minor password/TOTP/version-governance and diagnostic clarifications. TOKEN/DEVICE semantic encodings, object crypto, `objects-v1/`, capacity rules, and existing byte vectors are unchanged.
 
 ---
 
@@ -244,6 +242,8 @@ The protocol performs no Unicode normalization. Applications MUST NOT silently n
 
 Inputs longer than 1024 UTF-8 bytes MUST be rejected. Application policy MAY require a non-empty or stronger password for creation, but readers MUST remain able to process every format-valid password byte string.
 
+A creation UI SHOULD warn or require explicit confirmation before creating a vault with an empty password. Applications MAY apply stronger local password policy at creation, but such policy MUST NOT make existing format-valid vaults unreadable.
+
 ---
 
 ## 7. Vault root key
@@ -409,6 +409,8 @@ VAULT_BINDING =
 ```
 
 `VAULT_BINDING` is local-only durable security state.
+
+The direct HMAC use of `K_root` here is intentional. `K_root` is already a uniformly random 256-bit key, `VAULT_BINDING` is a single local PRF-derived binding value, and the fixed `totipo/v1/local-vault-binding` domain string separates this use. An additional HKDF expansion would not provide a distinct interoperability/security property for this local binding.
 
 A configured vault has local establishment state:
 
@@ -687,7 +689,6 @@ A future-family writer claiming rolling compatibility MUST ensure the required v
 If a compatibility frontier is too wide for one v1-family object, the future specification must preserve equivalent causal coverage using bounded v1-family compatibility objects.
 
 Rolling-upgrade interoperability with v1 is cooperative, not enforceable by v1 alone: an older v1 client can observe future-family state only to the extent that the future-family writer publishes the required authenticated v1-family compatibility projection.
-
 A future envelope family that does not publish such compatibility state makes no rolling-upgrade compatibility promise to v1 clients.
 
 ### 12.7 Compatibility boundary
@@ -858,9 +859,13 @@ Apple:
     Secure Enclave P256.Signing where supported/desired
 ```
 
-Implementations SHOULD use platform crypto implementations rather than bundle independent elliptic-curve arithmetic merely for Totipo.
+Implementations SHOULD use platform/native cryptographic signing implementations rather than bundle independent elliptic-curve arithmetic merely for Totipo.
 
-ECDSA signatures need not be deterministic. Randomized signatures are valid and expected.
+ECDSA signing MUST use a signing implementation with cryptographically secure ephemeral-scalar (`k`) generation. A trusted implementation may derive `k` deterministically, for example using RFC 6979, or generate it from a platform CSPRNG with appropriate entropy. Deterministic RFC 6979 signing is acceptable and SHOULD be preferred when it is directly provided by the selected trusted platform/library API. Implementations MUST NOT add ad-hoc nonce-generation logic merely for Totipo.
+
+ECDSA signatures need not be deterministic. Randomized signatures from a secure native/platform implementation are valid and expected.
+
+If an implementation detects the same ECDSA `r` value in distinct signatures made by the same provenance key, it SHOULD surface a provenance-key compromise/anomaly warning. Such a diagnostic does not retroactively change TOKEN value authority.
 
 A conforming writer emits the signature as canonical DER ECDSA `(r,s)` bytes. For P-256 the field is bounded to `0..72` bytes; a zero-length signature is an explicit no-valid-signature representation and yields rejected provenance.
 
@@ -887,6 +892,14 @@ If matching public-key bytes are available but do not decode as P-256, or the TO
 If the signature verifies, TOKEN provenance is `VERIFIED`.
 
 A SHA-256 collision causing two distinct canonical public keys to share one `DEVICE_ID` is outside the ordinary threat model. If an implementation ever observes distinct public-key byte strings for one `DEVICE_ID`, it MUST treat provenance for that identity as rejected/anomalous rather than choose one.
+
+### 16.2 Initial DEVICE advertisement
+
+Before a writer reports its **first** successful TOKEN publication for a particular local device provenance identity in an established vault, it MUST ensure that an assertion-valid, locally provenance-verified v1 `DEVICE` advertising that exact `DEVICE_ID` and `PUBLIC_KEY_X963` has been durably published into `objects-v1/`.
+
+The writer SHOULD publish and locally verify the DEVICE before publishing the first TOKEN. A crash that leaves an otherwise valid orphan DEVICE advertisement is harmless.
+
+Synchronization may expose the TOKEN before the DEVICE to another client; that peer may temporarily classify TOKEN provenance as `UNRESOLVED` until the DEVICE arrives. The publication requirement ensures that a conforming writer does not intentionally leave peer provenance permanently unresolved.
 
 ---
 
@@ -987,6 +1000,10 @@ using ECDSA P-256 with SHA-256.
 
 The canonical unsigned object is the canonical semantic object with the complete `SIGNATURE` TLV omitted.
 
+`K_signature_context` is intentionally part of the signed message even though `DEVICE_ID` is vault-independent. It binds provenance to one vault root: the same device public key and otherwise identical unsigned semantic bytes produce a different signature input in a different vault. Without this vault-derived context, a valid provenance signature copied from one vault could verify in another vault that knows the same public key, incorrectly carrying device attribution across vault boundaries.
+
+The ASCII object-type prefixes additionally separate TOKEN and DEVICE provenance-signature domains.
+
 Writer construction order:
 
 ```text
@@ -1007,7 +1024,7 @@ compute OBJECT_ID
 encrypt
 ```
 
-Because ECDSA signing is randomized, two otherwise identical actions may produce distinct signatures and object IDs. This is acceptable.
+Because ECDSA signing may be randomized, two otherwise identical actions may produce distinct signatures and object IDs. This is acceptable.
 
 A conforming writer MUST locally verify its newly generated signature before publishing.
 
@@ -1016,6 +1033,8 @@ Readers classify provenance independently from state assertion validity under Se
 A `TOKEN` signature is verified against public-key material whose derived `DEVICE_ID` equals `AUTHOR_DEVICE_ID`.
 
 A `DEVICE` signature is self-verified against the `PUBLIC_KEY_X963` contained in that `DEVICE`.
+
+---
 
 ## 20. DEVICE
 
@@ -1247,7 +1266,15 @@ New authenticated supported/opaque security knowledge MUST be durably persisted 
 
 Failure to persist learned authenticated security information sets `KNOWLEDGE_PERSISTENCE_BLOCKED` and blocks both authoritative and candidate operations.
 
-### 24.2 Common readiness predicates
+Within one established local continuity epoch, durable authenticated graph/evidence knowledge is not discarded merely because synchronized bytes disappear.
+
+### 24.2 Common readiness predicates and active opaque-unscoped evidence
+
+An `OPAQUE_UNSCOPED` record is **active** when it belongs to the current local continuity epoch and has not subsequently been reclassified by a compatible implementation as a supported-valid or opaque-routable object.
+
+Synchronized disappearance alone does not deactivate it.
+
+Define:
 
 ```text
 BASE_OPERATION_SAFE =
@@ -1257,11 +1284,13 @@ BASE_OPERATION_SAFE =
 AUTHORITATIVE_VAULT_READY =
     BASE_OPERATION_SAFE
     and DISCOVERY_STATE == READY
-    and no OPAQUE_UNSCOPED evidence is active
+    and no active OPAQUE_UNSCOPED evidence exists
 
 CANDIDATE_USE_READY =
     BASE_OPERATION_SAFE
 ```
+
+Active `OPAQUE_UNSCOPED` evidence therefore blocks authoritative operations but does not by itself block explicit candidate credential use.
 
 ### 24.3 Discovery
 
@@ -1291,6 +1320,8 @@ UNAVAILABLE_SUPPORTED_CURRENT_HEADS(T)
 READABLE_CURRENT_TOKEN_VALUES(T)
 ```
 
+in the obvious partition of current heads.
+
 Any opaque or unavailable current head means v1 cannot claim complete understanding of current TOKEN value state.
 
 ### 24.6 Scope of degradation
@@ -1299,13 +1330,24 @@ A routable opaque TOKEN affects only its `TOKEN_ID`.
 
 A routable opaque DEVICE affects only presentation/provenance for its `DEVICE_ID`.
 
-Opaque-unscoped authenticated evidence blocks authoritative vault operations through `AUTHORITATIVE_VAULT_READY` but does not block explicit candidate use.
+Active opaque-unscoped authenticated evidence blocks authoritative vault operations through `AUTHORITATIVE_VAULT_READY`, but does not block explicit candidate use through `CANDIDATE_USE_READY`.
 
-### 24.7 Integrity
+### 24.7 Reappearance, synchronized corruption, and local graph integrity
 
-Reappearing bytes for one durable `OBJECT_ID` must reproduce the same immutable routing record.
+Reappearing **successfully authenticated** bytes for one durable `OBJECT_ID` MUST reproduce the same immutable routing record.
 
-Detected corruption, global-ID inconsistency, or resolved cycles enters `LOCAL_CONTINUITY_UNKNOWN`.
+If successfully authenticated bytes at the same keyed `OBJECT_ID` disagree with the durable record, or if durable local graph/security records are corrupt/internally inconsistent, the client MUST treat this as local graph/security-memory integrity failure and enter `LOCAL_CONTINUITY_UNKNOWN`.
+
+By contrast, synchronized bytes at a known `OBJECT_ID` that are absent, unreadable, wrong-length, fail AEAD authentication, fail padding checks, or fail keyed object-ID verification are hostile/unavailable current storage evidence. They MUST NOT cause `LOCAL_CONTINUITY_UNKNOWN`.
+
+In that synchronized-corruption case:
+
+- the durable routing/graph node is retained;
+- its previously learned ancestry remains known;
+- if its complete supported TOKEN/DEVICE value/presentation bytes are needed and no exact trusted local copy is available, that value/presentation becomes unavailable;
+- ordinary/candidate behavior follows the existing availability rules.
+
+Detected durable-record corruption, global-ID inconsistency, or resolved cycles remains a local continuity failure.
 
 Durable authenticated routing/evidence is not removed merely because synchronized bytes disappear.
 
@@ -1458,15 +1500,21 @@ This whole-state rule replaces v0's lifecycle-witness machinery.
 
 Durable DEVICE topology includes supported-valid and opaque-routable nodes.
 
-Current DEVICE heads for one `DEVICE_ID` are maximal durable nodes under resolved same-device ancestry.
+Current DEVICE heads for one `DEVICE_ID` are maximal durable nodes under resolved same-device ancestry, regardless of provenance status.
 
-Supported provenance-verified v1 DEVICE heads may supply authenticated friendly names.
+Only supported provenance-`VERIFIED` DEVICE heads may supply authenticated friendly names.
 
-If any current DEVICE head is opaque, presentation state is incomplete for v1. The client SHOULD fall back to `DEVICE_ID` / known key fingerprint plus a future-version presentation warning.
+Supported current DEVICE heads with provenance `UNRESOLVED` or `REJECTED` are **presentation-inert**: they do not supply an authenticated friendly name and are not counted as authenticated-name alternatives. They remain causal graph heads and MUST still be incorporated by a conforming rename/convergence operation under Section 49.
+
+If at least one supported readable provenance-verified current head exists and all such heads agree on one name, that name is the authenticated current presentation even when additional supported unverified/rejected heads exist; the UI SHOULD separately surface provenance warnings for those inert heads.
+
+If verified supported current heads provide differing readable names, presentation is conflicted.
+
+If any current DEVICE head is opaque, presentation state is incomplete for v1. The client SHOULD fall back to `DEVICE_ID` / known key fingerprint plus a future-version presentation warning rather than presenting an older name as confidently current.
 
 A later supported v1 DEVICE descendant may restore readable current presentation.
 
-Opaque DEVICE state affects presentation/provenance only and MUST NOT invalidate TOKEN state authority or credential generation.
+Opaque or unverified DEVICE state affects presentation/provenance only and MUST NOT invalidate TOKEN state authority or credential generation.
 
 ---
 
@@ -1545,7 +1593,7 @@ OPAQUE_UNSCOPED records
 
 An implementation MAY retain exact authenticated immutable object copies as a protected local recovery/cache layer, but this is not required.
 
-The graph is append-only knowledge:
+Within one established local continuity epoch, the graph/evidence store is append-only knowledge:
 
 - a known valid node is not removed because synchronized bytes disappear;
 - immutable parent claims are not rewritten;
@@ -1594,6 +1642,30 @@ Baseline re-establishment does not itself author any synchronized TOKEN.
 Conflicts/incomplete current values remain conflicts/incomplete after baseline establishment and are handled normally.
 
 If the scan is resource-incomplete, or graph-integrity failure occurs while constructing the replacement graph, baseline re-establishment MUST NOT complete.
+
+---
+
+
+### 34.4 Explicit user-directed continuity reset
+
+A client MAY offer an explicit user-directed continuity reset when the user deliberately chooses to abandon the current local rollback/history-continuity evidence and establish a fresh baseline from currently available authenticated storage.
+
+This is the v1-native recovery path for sticky local evidence such as an `OPAQUE_UNSCOPED` record that cannot otherwise be interpreted by the current implementation.
+
+Before discarding the prior local security epoch, the client MUST:
+
+1. clearly warn that previously remembered history, rollback evidence, opaque-unscoped evidence, and other local continuity knowledge may be lost;
+2. obtain explicit user confirmation;
+3. enter `LOCAL_CONTINUITY_UNKNOWN`;
+4. discard/replace the old local graph/evidence epoch only as part of the Section 34.3 baseline re-establishment procedure.
+
+The new baseline is built solely from the resource-complete current scan.
+
+If the previously blocking opaque-unscoped object is still available, it is rediscovered and recorded again, so authoritative operations remain blocked.
+
+If it is absent from the complete current scan, the new baseline does not retain the prior epoch's opaque-unscoped record. This is an intentional loss of prior continuity guarantees, not proof that the old object never existed.
+
+A normal synchronization disappearance MUST NOT trigger this reset automatically.
 
 ---
 
@@ -1682,9 +1754,28 @@ It may make current friendly-name/presentation state unreadable but does not blo
 
 ### 37.3 Opaque-unscoped v1-family evidence
 
-Authenticated `OPAQUE_UNSCOPED` evidence can arise only from an authenticated v1-family object whose scope cannot be determined by the old client.
+Authenticated `OPAQUE_UNSCOPED` evidence can arise only from an authenticated v1-family object whose scope cannot be determined by the current client.
 
-It blocks `AUTHORITATIVE_VAULT_READY`, so ordinary current use and semantic authorship pause vault-wide. It does not block explicit candidate credential use under `CANDIDATE_USE_READY`.
+Once durably recorded in the current local continuity epoch, that evidence is **active** under Section 24.2.
+
+While active:
+
+```text
+AUTHORITATIVE_VAULT_READY = false
+```
+
+so ordinary current use and semantic authorship remain blocked vault-wide. Explicit candidate credential use remains available under `CANDIDATE_USE_READY`.
+
+Within an established v1 client this block is sticky, not a temporary pause: synchronized disappearance of the opaque-unscoped object's bytes does not clear the durable evidence.
+
+Active opaque-unscoped evidence becomes inactive only when:
+
+- a compatible implementation successfully reprocesses the exact authenticated object and can durably reclassify it as supported-valid or opaque-routable; or
+- the user deliberately performs the Section 34.4 continuity reset/re-baseline procedure, accepting loss of the previous local continuity epoch.
+
+If the offending object remains present during re-baselining, it is rediscovered and the block remains.
+
+v1 defines no ordinary “ignore this authenticated unknown object” override.
 
 ### 37.4 Unknown sibling envelope families
 
@@ -1704,13 +1795,15 @@ Old v1 clients observe only that compatibility projection.
 
 A newer client may use the separate future-family representation as its authoritative richer state while maintaining the v1 compatibility graph for old clients.
 
-### 37.6 No disappearance bypass
+Rolling-upgrade interoperability with v1 is cooperative, not enforceable by v1 alone.
 
-Once v1-family opaque routing/evidence has been durably learned, synchronized disappearance does not erase it.
+### 37.6 Durable opaque evidence
 
-The presence or absence of an unknown sibling family directory does not clear or create that evidence.
+Durably learned `OPAQUE_ROUTABLE` ancestry remains known despite synchronized disappearance and may later become historical through resolved causal descendants.
 
-Only causal descendants, compatible reprocessing/upgrade, migration, or explicit continuity reset/re-establishment changes the durable v1 interpretation.
+Durably learned `OPAQUE_UNSCOPED` evidence follows the stricter Section 37.3 lifecycle because its logical scope is unknown.
+
+The presence or absence of an unknown sibling family directory does not clear or create either kind of evidence.
 
 ---
 
@@ -1790,7 +1883,7 @@ Supported algorithms:
 
 `SECRET_BYTES` is `1..128` raw bytes.
 
-Newly generated secrets MUST contain at least 20 CSPRNG-generated bytes.
+Newly generated secrets MUST be at least 20 bytes long and every byte MUST be generated by the platform CSPRNG.
 
 v1 does not represent HOTP/event-counter credentials, `T0 != 0`, non-decimal/alphanumeric OTP formats, or digit counts other than 6/7/8.
 
@@ -1835,7 +1928,10 @@ Tag `0x0003` is reserved in v1.
 
 #### OBJECT_VERSION allocation
 
-`OBJECT_VERSION` values are allocated by the published Totipo specification process for semantic grammars within an envelope family. r11 assigns `0x01`. All other values are unassigned by r11. Conforming implementations MUST NOT independently assign an unassigned value for interoperable/shared-vault use without a published Totipo specification allocating that value. r11 defines no private-use or experimental `OBJECT_VERSION` range.
+`OBJECT_VERSION` values are allocated by the published Totipo specification process for semantic grammars within an envelope family. r12 assigns `0x01`. All other values are unassigned by r12. Conforming implementations MUST NOT independently assign an unassigned value for interoperable/shared-vault use without a published Totipo specification allocating that value. r12 defines no private-use or experimental `OBJECT_VERSION` range.
+
+Reader-side forward-compatibility handling is deliberately independent of allocation governance: an authenticated unsupported numeric value with a valid frozen routing prefix is handled conservatively as opaque state even if the current implementation does not know that value to be officially allocated. `OPAQUE_ROUTABLE` therefore means “structurally routable but semantically unsupported here,” not “officially assigned future Totipo version.” UIs and diagnostics SHOULD describe unknown/unassigned values accordingly.
+
 
 ### 42.2 TOKEN tags
 
@@ -2230,21 +2326,29 @@ The protocol records the resulting authoritative TOKEN and its parent identities
 
 ## 49. DEVICE write and wide presentation frontiers
 
-A v1 rename requires `AUTHORITATIVE_VAULT_READY` and no opaque current DEVICE head for the target `DEVICE_ID`, then uses the complete current supported provenance-verified DEVICE frontier.
+A v1 rename requires `AUTHORITATIVE_VAULT_READY` and no opaque current DEVICE head for the target `DEVICE_ID`.
 
-If it fits one object, the new DEVICE parents every current verified DEVICE head and carries the selected display name.
+The rename frontier is the complete current **supported DEVICE frontier**, including provenance-`VERIFIED`, `UNRESOLVED`, and `REJECTED` supported heads.
+
+Parenting an unverified/rejected DEVICE assertion expresses causal incorporation; it does not endorse that assertion's display name or provenance.
+
+The selected display name is chosen from user intent and authenticated presentation context under Section 31, not from presentation-inert unverified/rejected heads.
+
+If the frontier fits one object, the new provenance-verified DEVICE parents every current supported DEVICE head and carries the selected display name.
 
 If it does not fit, use an analogous staged linear fold:
 
 - every fold object carries the same selected display name and the same `AUTHOR_TIME` captured for the rename action;
-- first object references as many current heads as fit;
-- later objects reference previous staged head plus additional original heads;
+- the first object references as many current supported DEVICE heads as fit;
+- later objects reference the previous staged head plus additional original supported heads;
 - every published assertion-valid DEVICE is durably inserted into the known DEVICE graph;
 - exact locally staged intermediates do not stale their own rename selection;
 - any external relevant DEVICE observation aborts/recomputes the selection;
-- finalization requires every original verified current DEVICE head to be a durable known ancestor of FINAL.
+- finalization requires every original current supported DEVICE head to be a durable known ancestor of FINAL.
 
 Because durable DEVICE topology remains known after synchronized bytes disappear, no separate presentation superseded-ID bookkeeping is required.
+
+If a current supported DEVICE head has rejected/unresolved provenance, it remains presentation-inert but can be causally moved into history by the rename.
 
 If a current DEVICE value/name is unavailable, UI falls back to `DEVICE_ID`/fingerprint plus warning under Section 31.
 
@@ -2324,6 +2428,8 @@ TOKEN value authority derives from this vault authentication plus intrinsic comp
 
 P-256 provenance is a separate attribution claim. Verified provenance does not grant additional protocol authorization; rejected/unresolved provenance does not erase TOKEN value authority.
 
+`K_signature_context` vault-binds otherwise vault-independent device provenance. It prevents a signature created for one vault from being replayed as verified attribution in another vault that knows the same device public key.
+
 A signed/vault-authenticated parent ID proves only that the child committed to that exact immutable identity.
 
 For an established client, once compatible supported-valid or opaque-routable child/parent routing nodes are durably known, the resolved edge remains part of durable graph knowledge even if one or both synchronized files later disappear.
@@ -2350,6 +2456,11 @@ A party with `K_root` remains capable of authoring arbitrary new vault-valid TOK
 
 ---
 
+
+Hostile synchronized-file corruption and local durable-security-memory corruption have different meanings. Failure to authenticate current synchronized bytes only makes those bytes unavailable; previously authenticated durable graph knowledge remains. `LOCAL_CONTINUITY_UNKNOWN` is reserved for detected corruption/rollback/inconsistency of the local durable security-memory basis itself (or an authenticated same-ID inconsistency).
+
+---
+
 ## 54. Core invariants
 
 ```text
@@ -2359,36 +2470,42 @@ objects-v1/ is the exact storage namespace for the Totipo v1 envelope family.
 
 Every valid object in objects-v1/ is exactly 1024 bytes.
 
-OBJECT_VERSION versions semantics inside the v1 envelope family; it does not change
-the family namespace, envelope size, object-ID/encryption construction, or frozen
-routing contract.
-
-A different envelope/storage family uses a different sibling namespace and is outside
-v1 ordinary discovery.
-
-Unknown sibling family names/files are not authenticated semantic evidence.
+OBJECT_VERSION versions semantics inside the v1 envelope family; allocation governance
+is specification-controlled, while unsupported routable values are still handled
+conservatively as opaque state.
 
 The frozen routing prefix lets older clients retain causal identity/topology for
 future semantic versions that remain in objects-v1/.
 
-Routable future TOKEN/DEVICE nodes participate in ancestry and current-head selection.
+Opaque-routable state degrades the affected scope; active opaque-unscoped evidence
+blocks authoritative vault operations but not explicit candidate credential use.
 
-An opaque current TOKEN degrades only that token; unrelated tokens remain usable.
-
-Opaque-unscoped authenticated v1-family evidence blocks authoritative operations
-because scope is unknown, but explicit candidate credential use remains available.
-
-A future envelope family claiming rolling compatibility with v1 publishes authenticated
-v1-family compatibility assertions into objects-v1/.
-
-A differently sized file in objects-v1/ cannot become opaque future evidence; without
-a valid 1024-byte authenticated family envelope it is only invalid current storage.
+Within one local continuity epoch, opaque-unscoped evidence remains active despite
+synchronized disappearance until compatible reclassification or an explicit
+user-directed continuity reset/re-baseline.
 
 Candidate use requires exact supported-valid readable LIVE material and never mutates
 or reclassifies protocol state.
 
-Resolved ancestry, not semantic version, timestamp, arrival order, namespace name,
-or filename order, determines current heads.
+Resolved ancestry, not provenance, semantic version, timestamp, arrival order,
+namespace name, or filename order, determines current heads.
+
+Only provenance-verified supported DEVICE heads supply authenticated friendly names,
+but every current supported DEVICE head participates in rename/convergence causality.
+
+Before first TOKEN success for a device/vault, the writer has durably published the
+corresponding DEVICE public-key advertisement.
+
+Hostile synchronized-byte corruption never erases already authenticated durable graph
+knowledge or by itself enters LOCAL_CONTINUITY_UNKNOWN.
+
+Detected local durable-security-memory corruption/inconsistency does enter
+LOCAL_CONTINUITY_UNKNOWN.
+
+ECDSA provenance signing uses cryptographically secure native/platform nonce generation;
+ad-hoc ECDSA nonce generation is forbidden.
+
+K_signature_context vault-binds device provenance signatures.
 
 Loss of semantic certainty should normally degrade capability rather than make
 authenticated candidate material unusable.
@@ -2454,6 +2571,9 @@ Before v1 byte-level release-candidate freeze, executable evidence MUST cover at
 - malformed DER => provenance rejected, TOKEN state retained;
 - mathematically invalid signature => provenance rejected, TOKEN state retained;
 - randomized signatures for identical message/key are accepted;
+- signing implementation uses cryptographically secure ECDSA nonce generation; no ad-hoc Totipo nonce generator;
+- same device key + same unsigned object under different `K_signature_context` values verifies only in the matching vault context;
+- first successful TOKEN publication by a fresh local device identity is preceded by durable publication of its DEVICE advertisement;
 - exact v1 `totipo/v1/token` and `totipo/v1/device` signature-input vectors including AUTHOR_TIME;
 - AUTHOR_TIME=0 unknown case and positive u64 case;
 - AUTHOR_TIME=0x7fffffffffffffff and 0xffffffffffffffff remain structurally valid and non-causal;
@@ -2504,6 +2624,13 @@ Before v1 byte-level release-candidate freeze, executable evidence MUST cover at
 
 ### Durable known-graph / missing-value behavior
 
+- active opaque-unscoped evidence survives synchronized disappearance within one continuity epoch;
+- compatible reprocessing may durably reclassify opaque-unscoped evidence and clear the authoritative block;
+- explicit continuity reset/re-baseline clears prior-epoch opaque-unscoped evidence only if it is absent from the complete new scan;
+- present opaque-unscoped evidence is rediscovered during re-baseline and remains blocking;
+- corrupt/unreadable synchronized bytes at a known ID retain the durable node and make current value unavailable rather than entering LOCAL_CONTINUITY_UNKNOWN;
+- corruption/inconsistency of local durable graph/security memory enters LOCAL_CONTINUITY_UNKNOWN;
+
 - supported-valid and opaque-routable TOKEN nodes share one durable causal graph;
 - opaque current TOKEN remains current while its value semantics are unreadable;
 - routable opaque TOKEN affects only its TOKEN_ID;
@@ -2542,6 +2669,10 @@ Before v1 byte-level release-candidate freeze, executable evidence MUST cover at
 ---
 
 ### DEVICE semantics
+
+- supported provenance-REJECTED/UNRESOLVED current DEVICE heads are presentation-inert;
+- rename/convergence parents every current supported DEVICE head regardless of provenance status;
+- rejected-provenance current DEVICE head becomes historical after a verified rename that causally incorporates it;
 
 - root;
 - rename;
@@ -2585,20 +2716,20 @@ At least two independent implementations MUST consume the frozen v1 vectors befo
 
 ---
 
-## 56. Open work after r11
+---
 
-r10 retains the complete-state/durable-graph and opaque-routing architecture, and makes envelope-family evolution explicit through the fixed `objects-v1/` namespace plus authenticated compatibility projections from genuinely new future families.
+## 56. Open work after r12
+
+r12 retains the complete-state/durable-graph, opaque-routing, and envelope-family architecture while tightening opaque-unscoped recovery, DEVICE convergence, provenance publication, and corruption semantics.
 
 Before v1-rc1:
 
-1. extend/promote the executable semantic oracle to cover supported/opaque-routable graph nodes, opaque-unscoped evidence, scoped degradation, discovery, candidate use, staged folds, DEVICE presentation, timestamp, and continuity-baseline behavior;
-2. complete remaining v1 crypto/bootstrap/TOTP conformance coverage;
-3. continue adversarial review of state authority vs provenance, durable topology vs value availability, and parent semantic failure vs child TOKEN state;
-4. verify durable graph persistence/integrity failures, discovery completeness, candidate-use under incomplete discovery, local continuity reset, and confirmation freshness across crash/restart and multi-client synchronization;
-5. cross-verify P-256 provenance vectors in Java, Android Keystore, and Apple CryptoKit;
-6. exercise 1006-byte envelope boundaries, four-parent maximum-field TOKENs, five-parent rejection, fourteen-parent maximum-display DEVICEs, fifteen-parent DEVICE folding, and linear wide-frontier folding;
-7. test filesystem/crash ordering, graph-node durability, synchronized intermediate deletion, security-memory rollback/reset, and confirmation freshness across bounded convergence batches;
-8. perform an external specification/security review before declaring v1 release-candidate freeze.
+1. add/maintain executable conformance coverage for the r12 opaque-unscoped lifecycle, DEVICE all-head convergence, remote-vs-local corruption distinction, first-DEVICE publication, and signature-context vault binding;
+2. cross-verify P-256 provenance vectors and signing behavior in Java/JCA, Android Keystore, and Apple CryptoKit;
+3. verify durable graph persistence, continuity reset/re-baseline, discovery completeness, candidate-use, confirmation freshness, and bounded-fold interruption across crash/restart and concurrent-client workflows;
+4. test production filesystem behavior including stable bounded no-follow reads, namespace rebinding resistance, immutable object publication, bootstrap replacement ordering, and hostile synchronized-byte corruption;
+5. verify native/platform password UTF-8 and signing behavior without introducing custom cryptographic implementations;
+6. perform an external specification/security review and independent live-implementation vector consumption before declaring v1 release-candidate freeze.
 
 ---
 
@@ -2634,26 +2765,37 @@ The security goals previously served by those mechanisms are addressed by comple
 
 ## 58. Revision history
 
+### v1/r12
+
+Twelfth v1 design draft.
+
+State-machine/provenance hardening changes from r11:
+
+- defines when `OPAQUE_UNSCOPED` evidence is active and makes synchronized disappearance explicitly non-clearing;
+- adds an explicit user-directed continuity reset/re-baseline path that can abandon prior-epoch opaque-unscoped evidence only with acknowledgement of lost continuity guarantees;
+- clarifies that present opaque-unscoped evidence is rediscovered and remains blocking after re-baseline;
+- makes supported provenance-UNRESOLVED/REJECTED DEVICE heads presentation-inert but still part of DEVICE causality;
+- requires DEVICE rename/convergence to incorporate every current supported DEVICE head regardless of provenance status;
+- distinguishes hostile synchronized-byte corruption/unavailability from corruption/inconsistency of local durable security memory;
+- requires cryptographically secure native/platform ECDSA nonce generation and forbids ad-hoc Totipo nonce generation;
+- requires durable publication of the local DEVICE advertisement by the time first TOKEN publication for that device/vault is reported successful;
+- documents that `K_signature_context` vault-binds otherwise vault-independent device provenance;
+- clarifies empty-password creation UX, TOTP secret-generation wording, direct-HMAC `VAULT_BINDING` rationale, and the distinction between `OBJECT_VERSION` routability and official allocation;
+- fixes stale revision/open-work wording and updates conformance requirements;
+- no TOKEN/DEVICE wire-format, object-crypto, envelope-family, routing-prefix, size/capacity, or TOTP algorithm changes.
+
 ### v1/r11
 
 Eleventh v1 design draft.
 
 Governance, compatibility-clarification, and historical-cleanup changes from r10:
 
-- clarifies that rolling-upgrade interoperability with future envelope families is cooperative: v1 supplies the authenticated compatibility mechanism, but an older v1 client can observe future-family state only when the future-family writer publishes the required v1-family compatibility projection;
-- assigns `OBJECT_VERSION = 0x01` to the current semantic grammar;
-- leaves every other `OBJECT_VERSION` value unassigned by r11;
-- requires interoperable `OBJECT_VERSION` allocations to come from a published Totipo specification;
-- defines no private-use or experimental `OBJECT_VERSION` range;
+- clarifies that rolling-upgrade interoperability with future envelope families is cooperative and depends on the future writer publishing the required v1-family compatibility projection;
+- assigns `OBJECT_VERSION = 0x01` to the current semantic grammar, leaves every other value unassigned, requires published-spec allocation for interoperable use, and defines no private-use range;
 - records v0 as undeployed historical design work rather than a supported predecessor;
-- removes the normative v0 migration procedure;
-- renumbers the later top-level sections after removal of that migration section;
-- cleans stale/completed pre-RC work wording where already reflected by the current repository evidence;
-- no TOKEN or DEVICE semantic encoding changes;
-- no routing-prefix changes;
-- no `objects-v1/` storage-family changes;
-- no cryptographic construction changes;
-- no vector expectations or runtime semantic changes.
+- removes the normative v0 migration procedure and renumbers subsequent sections;
+- cleans stale/completed pre-RC work wording;
+- no TOKEN/DEVICE semantic encoding, routing-prefix, storage-family, cryptographic, vector-expectation, or runtime-semantic changes.
 
 ### v1/r10
 
