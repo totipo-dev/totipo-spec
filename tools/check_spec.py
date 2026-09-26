@@ -10,7 +10,7 @@ assert [int(n) for n in re.findall(r"^## (\d+)\.", s, re.M)] == list(range(1, 59
 for heading in [
     "## 54. Core invariants",
     "## 55. Required conformance evidence for v1",
-    "## 56. Open work after r10",
+    "## 56. Open work after r11",
     "## 57. v0 concepts intentionally absent from v1",
 ]:
     assert heading in norm, heading
@@ -19,7 +19,7 @@ allocation = norm.split("#### OBJECT_VERSION allocation", 1)[1].split("### 42.2"
 for concept in [
     r"published.*specification.*process",
     r"semantic grammars.*envelope family",
-    r"r10\s+assigns\s+`0x01`",
+    r"r11\s+assigns\s+`0x01`",
     r"[Aa]ll other values.*unassigned",
     r"MUST NOT.*independently assign.*interoperable/shared-vault.*published.*specification",
     r"no private-use or experimental.*OBJECT_VERSION.*range",
@@ -37,8 +37,11 @@ for concept in [
 assert not re.search(r"^## .*Migration from v0", norm, re.M)
 assert "Migration creates a new v1 vault" not in norm
 
+assert re.search(r"^### v1/r11$", s.split("## 58. Revision history", 1)[1], re.M)
+
 required = [
-    "**Revision:** r10",
+    "**Revision:** r11",
+    "**Revision 11 summary:**",
     "objects-v1/",
     "Every valid object in objects-v1/ is exactly 1024 bytes.",
     "OBJECT_VERSION versions semantics inside the v1 envelope family",
@@ -72,4 +75,4 @@ for x in [
 
 assert norm.count("| `0x0200` | `DEVICE_ID` |") == 1
 assert "Unrelated tokens continue normal ordinary use and authorship" in norm
-print("PASS: Totipo v1/r10 structural spec checks")
+print("PASS: Totipo v1/r11 structural spec checks")

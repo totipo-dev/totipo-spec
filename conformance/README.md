@@ -1,7 +1,7 @@
 # Go v1 reference/conformance consumer
 
 This module supports Go 1.23 or later and is the single in-repository reference
-consumer for Totipo v1/r10. It is deliberately not a production client.
+consumer for Totipo v1/r11. It is deliberately not a production client.
 
 From the repository root:
 

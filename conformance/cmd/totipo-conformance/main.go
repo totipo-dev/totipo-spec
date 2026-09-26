@@ -38,5 +38,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "FAIL: %d/%d cases\n", failures, len(cases))
 		os.Exit(1)
 	}
-	fmt.Printf("PASS: %d Totipo v1/r10 conformance cases\n", len(cases))
+	fmt.Printf("PASS: %d Totipo v1/r11 conformance cases\n", len(cases))
 }

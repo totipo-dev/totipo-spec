@@ -2,9 +2,9 @@
   "format": "totipo-requirements-v1",
   "status": "moving-pre-rc",
   "protocol": "totipo-v1",
-  "spec_revision": "r10",
-  "manifest_sha256": "031456a8b35633ab86c9a7c04c6f54ba00697b7577de9f43379ce4932c6bca38",
-  "spec_sha256": "8c93d6e05b0e19682d7875e011aba4961558ff7c606919006b98e3df30219b52",
+  "spec_revision": "r11",
+  "manifest_sha256": "b14dabdb47afdb4863dd26ed27330168178db5e80c283fa21642cdfc1e24a951",
+  "spec_sha256": "63a61ede5263223754fb4d94409756c5c9512bda7bedee082ae500a02f6466e4",
   "schema_sha256": "59bdc9165b1c7e940031c447c2da640185774a6e4fd52fa0fee0b245061e0440",
   "case_schema_sha256": "bab64fa1257ecc6cb0fdbd0aa0ceea223f93bf33be8031b1dcd0fd041aaf8af9",
   "required_cases": [

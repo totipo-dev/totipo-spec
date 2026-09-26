@@ -62,7 +62,7 @@ func Read(root string) (Manifest, []Case, error) {
 	if e = Decode(b, &m); e != nil {
 		return m, nil, e
 	}
-	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r10" || len(m.Cases) == 0 {
+	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r11" || len(m.Cases) == 0 {
 		return m, nil, fmt.Errorf("invalid manifest header or empty corpus")
 	}
 	seen, paths := map[string]bool{}, map[string]bool{}
@@ -175,7 +175,7 @@ func VerifyProfile(root string, m Manifest) error {
 	if e = Decode(b, &p); e != nil {
 		return e
 	}
-	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r10" || len(p.Required) != len(m.Cases) {
+	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r11" || len(p.Required) != len(m.Cases) {
 		return fmt.Errorf("invalid moving profile")
 	}
 	for file, want := range map[string]string{"vectors/manifest.json": p.ManifestSHA256, "spec/totipo-vault-format-v1.md": p.SpecSHA256, "vectors/manifest.schema.json": p.SchemaSHA256, "vectors/case.schema.json": p.CaseSchemaSHA256} {

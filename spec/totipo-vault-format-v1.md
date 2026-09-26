@@ -1,11 +1,13 @@
 # Totipo Vault Format v1
 
-**Status:** design draft, revision 10  
+**Status:** design draft, revision 11  
 **Protocol version:** 1  
-**Revision:** r10  
+**Revision:** r11  
 **Scope:** encrypted append-only TOTP vault format, complete-state token assertions, token-local causal history, device presentation history, durable local rollback evidence, bootstrap semantics, cryptographic construction, canonical encoding, and writer/application safety.
 
 **Historical note:** Earlier Totipo design work used a v0 draft. It was never released as an implemented/deployed protocol and is not a supported predecessor of v1. v1 defines no migration protocol from v0; historical v0 draft artifacts are outside the v1 protocol.
+
+**Revision 11 summary:** v1/r11 is a traceability/governance revision. It records the cooperative nature of future-family rolling compatibility, formalizes `OBJECT_VERSION` allocation, removes the fictitious deployed-v0 migration obligation, and aligns revision history with the current body. It introduces no wire-format, crypto, storage-family, or runtime semantic changes.
 
 **Revision 10 summary:** v1/r10 makes the envelope-family boundary explicit in storage. The Totipo v1 envelope family owns the exact top-level namespace `objects-v1/`; every candidate in that namespace uses the fixed 1024-byte v1-family envelope and frozen routing contract. `OBJECT_VERSION` continues to version semantics inside that family. A genuinely new envelope/storage family uses a different sibling namespace (for example `objects-v2/`) and is not parsed or trusted merely because that directory exists. A future family that claims rolling-upgrade interoperability with v1 must publish authenticated v1-family compatibility assertions into `objects-v1/`, so old clients can degrade through the existing `OPAQUE_ROUTABLE` machinery rather than going blind.
 
@@ -1833,7 +1835,7 @@ Tag `0x0003` is reserved in v1.
 
 #### OBJECT_VERSION allocation
 
-`OBJECT_VERSION` values are allocated by the published Totipo specification process for semantic grammars within an envelope family. r10 assigns `0x01`. All other values are unassigned by r10. Conforming implementations MUST NOT independently assign an unassigned value for interoperable/shared-vault use without a published Totipo specification allocating that value. r10 defines no private-use or experimental `OBJECT_VERSION` range.
+`OBJECT_VERSION` values are allocated by the published Totipo specification process for semantic grammars within an envelope family. r11 assigns `0x01`. All other values are unassigned by r11. Conforming implementations MUST NOT independently assign an unassigned value for interoperable/shared-vault use without a published Totipo specification allocating that value. r11 defines no private-use or experimental `OBJECT_VERSION` range.
 
 ### 42.2 TOKEN tags
 
@@ -2583,7 +2585,7 @@ At least two independent implementations MUST consume the frozen v1 vectors befo
 
 ---
 
-## 56. Open work after r10
+## 56. Open work after r11
 
 r10 retains the complete-state/durable-graph and opaque-routing architecture, and makes envelope-family evolution explicit through the fixed `objects-v1/` namespace plus authenticated compatibility projections from genuinely new future families.
 
@@ -2593,11 +2595,10 @@ Before v1-rc1:
 2. complete remaining v1 crypto/bootstrap/TOTP conformance coverage;
 3. continue adversarial review of state authority vs provenance, durable topology vs value availability, and parent semantic failure vs child TOKEN state;
 4. verify durable graph persistence/integrity failures, discovery completeness, candidate-use under incomplete discovery, local continuity reset, and confirmation freshness across crash/restart and multi-client synchronization;
-5. generate exact canonical `TOKEN` and `DEVICE` byte/crypto vectors including variable-length DER ECDSA signatures;
-6. cross-verify P-256 provenance vectors in Java, Android Keystore, and Apple CryptoKit;
-7. exercise 1006-byte envelope boundaries, four-parent maximum-field TOKENs, five-parent rejection, fourteen-parent maximum-display DEVICEs, fifteen-parent DEVICE folding, and linear wide-frontier folding;
-8. test filesystem/crash ordering, graph-node durability, synchronized intermediate deletion, security-memory rollback/reset, and confirmation freshness across bounded convergence batches;
-9. perform an external specification/security review before declaring v1 release-candidate freeze.
+5. cross-verify P-256 provenance vectors in Java, Android Keystore, and Apple CryptoKit;
+6. exercise 1006-byte envelope boundaries, four-parent maximum-field TOKENs, five-parent rejection, fourteen-parent maximum-display DEVICEs, fifteen-parent DEVICE folding, and linear wide-frontier folding;
+7. test filesystem/crash ordering, graph-node durability, synchronized intermediate deletion, security-memory rollback/reset, and confirmation freshness across bounded convergence batches;
+8. perform an external specification/security review before declaring v1 release-candidate freeze.
 
 ---
 
@@ -2632,6 +2633,27 @@ The security goals previously served by those mechanisms are addressed by comple
 ---
 
 ## 58. Revision history
+
+### v1/r11
+
+Eleventh v1 design draft.
+
+Governance, compatibility-clarification, and historical-cleanup changes from r10:
+
+- clarifies that rolling-upgrade interoperability with future envelope families is cooperative: v1 supplies the authenticated compatibility mechanism, but an older v1 client can observe future-family state only when the future-family writer publishes the required v1-family compatibility projection;
+- assigns `OBJECT_VERSION = 0x01` to the current semantic grammar;
+- leaves every other `OBJECT_VERSION` value unassigned by r11;
+- requires interoperable `OBJECT_VERSION` allocations to come from a published Totipo specification;
+- defines no private-use or experimental `OBJECT_VERSION` range;
+- records v0 as undeployed historical design work rather than a supported predecessor;
+- removes the normative v0 migration procedure;
+- renumbers the later top-level sections after removal of that migration section;
+- cleans stale/completed pre-RC work wording where already reflected by the current repository evidence;
+- no TOKEN or DEVICE semantic encoding changes;
+- no routing-prefix changes;
+- no `objects-v1/` storage-family changes;
+- no cryptographic construction changes;
+- no vector expectations or runtime semantic changes.
 
 ### v1/r10
 

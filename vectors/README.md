@@ -1,6 +1,6 @@
 # v1 Conformance Vectors
 
-The [manifest](manifest.json) lists 77 current v1/r10 cases, each with a permanent
+The [manifest](manifest.json) lists 77 current v1/r11 cases, each with a permanent
 ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
 outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
 The manifest is the live case contract; all original planned IDs are represented.

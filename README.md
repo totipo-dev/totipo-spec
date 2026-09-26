@@ -9,7 +9,7 @@ Totipo is an encrypted, append-only, multi-device TOTP vault format designed for
 The current specification is:
 
 - **Totipo Vault Format v1**
-- design revision **r10**
+- design revision **r11**
 - moving pre-release-candidate conformance evidence
 
 The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
