@@ -9,7 +9,7 @@ Totipo is an encrypted, append-only, multi-device TOTP vault format designed for
 The current specification is:
 
 - **Totipo Vault Format v1**
-- design revision **r9**
+- design revision **r10**
 - moving pre-release-candidate conformance evidence
 
 The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
@@ -30,6 +30,17 @@ The current v1 design uses:
 A core availability principle is:
 
 > Loss of semantic certainty should normally degrade capability rather than make authenticated candidate material unusable.
+
+## Envelope-family discovery
+
+`objects-v1/` is the exact v1 envelope/storage-family namespace. `OBJECT_VERSION`
+versions semantic content inside that fixed 1024-byte family. Unknown sibling
+namespace names are not authenticated future-version evidence. A name such as
+`objects-v2/` is illustrative; v1 does not parse that family's contents.
+
+A future family claiming rolling compatibility publishes authenticated
+compatibility assertions into `objects-v1/`. Old clients learn the semantic effect
+only from that projection, using the existing supported/opaque routing rules.
 
 ## Repository map
 
@@ -67,12 +78,12 @@ build cache under `.direnv/` for the jailed development environment. When runnin
 Go directly there, set `GOCACHE="$PWD/.direnv/go-build"` from the repository root.
 The module tests run with `go -C conformance test ./...`.
 
-The [manifest](vectors/manifest.json) currently contains 71 cases. The
+The [manifest](vectors/manifest.json) currently contains 77 cases. The
 [moving pre-RC profile](requirements/v1-pre-rc.json) pins their IDs and hashes;
 it is not a release or a frozen RC profile. Normal checks never regenerate cases.
 
 See the [vector contract](vectors/FORMAT.md), [Go consumer](conformance/README.md),
-and [implementation report](review/V1_VECTOR_IMPLEMENTATION_REPORT.md).
+and [r10 integration report](review/V1_R10_INTEGRATION_REPORT.md).
 
 ## Current next step
 

@@ -53,7 +53,35 @@ type TOTPRow struct {
 	CounterHex  string `json:"counter_hex"`
 	Code        string `json:"code"`
 }
+type StorageEntry struct {
+	Path    string `json:"path"`
+	Kind    string `json:"kind"`
+	Fixture string `json:"fixture_case,omitempty"`
+	Data    string `json:"data_hex,omitempty"`
+	Size    int    `json:"zero_bytes,omitempty"`
+}
+type StorageObservation struct {
+	Path  string `json:"path"`
+	Class string `json:"class"`
+}
+type StorageExpected struct {
+	Observations  []StorageObservation `json:"observations"`
+	Learned       []string             `json:"learned_ids"`
+	Unscoped      []string             `json:"opaque_unscoped_ids"`
+	Authoritative bool                 `json:"authoritative"`
+	View          graph.Result         `json:"view"`
+}
+type StorageCase struct {
+	Notes         string          `json:"notes"`
+	Root          string          `json:"root_hex"`
+	NamespaceKind string          `json:"namespace_kind"`
+	Entries       []StorageEntry  `json:"entries"`
+	Query         Query           `json:"query"`
+	Want          StorageExpected `json:"expect"`
+}
 type Case struct {
+	Storage   *StorageCase `json:"storage,omitempty"`
+	fixtures  map[string]Case
 	TOTP      *TOTP          `json:"totp,omitempty"`
 	Format    string         `json:"format"`
 	ID        string         `json:"id"`

@@ -6,7 +6,16 @@ s = p.read_text(encoding="utf-8")
 norm = s[:s.index("## 59. Revision history")]
 
 required = [
-    "**Revision:** r9",
+    "**Revision:** r10",
+    "objects-v1/",
+    "Every valid object in objects-v1/ is exactly 1024 bytes.",
+    "OBJECT_VERSION versions semantics inside the v1 envelope family",
+    "Only direct regular-file children of `objects-v1/`",
+    "Unknown sibling family names/files are not authenticated semantic evidence.",
+    "A candidate in `objects-v1/` with any file length other than exactly 1024 bytes is invalid current v1-family storage evidence.",
+    "It MUST NOT by itself create `OPAQUE_ROUTABLE` or `OPAQUE_UNSCOPED`",
+    "A future envelope family that claims rolling-upgrade interoperability with v1 MUST maintain a v1-family compatibility projection in `objects-v1/`",
+    "A future-family writer claiming rolling compatibility MUST ensure the required v1-family compatibility assertion becomes durable no later than it reports the corresponding future-family semantic action successful.",
     "OPAQUE_ROUTABLE",
     "OPAQUE_UNSCOPED",
     "0200 DEVICE_ID",
@@ -31,4 +40,4 @@ for x in [
 
 assert norm.count("| `0x0200` | `DEVICE_ID` |") == 1
 assert "Unrelated tokens continue normal ordinary use and authorship" in norm
-print("PASS: Totipo v1/r9 structural spec checks")
+print("PASS: Totipo v1/r10 structural spec checks")

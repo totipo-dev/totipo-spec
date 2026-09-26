@@ -6,3 +6,7 @@
 /review/** -text
 /requirements/*.json -text
 /requirements/*.sha256 -text
+
+# The supplied normative Markdown uses two-space hard line breaks. Preserve its
+# exact bytes while allowing that Markdown syntax in Git whitespace checks.
+/spec/totipo-vault-format-v1.md whitespace=-blank-at-eol

@@ -1,6 +1,6 @@
 # v1 Conformance Vectors
 
-The [manifest](manifest.json) lists 71 current v1/r9 cases, each with a permanent
+The [manifest](manifest.json) lists 77 current v1/r10 cases, each with a permanent
 ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
 outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
 The manifest is the live case contract; all original planned IDs are represented.
@@ -20,3 +20,8 @@ application conformance, independent interoperability, or production readiness.
 
 The TOTP category contains three RFC 6238 algorithm cases, each with six standard
 timestamp rows and explicit secret/counter/code values. See [FORMAT.md](FORMAT.md).
+
+Six r10 environment cases cover exact `objects-v1/` discovery, ignored entry names
+and types, wrong sizes, ignored sibling namespaces, and future-family coexistence
+with/without a v1 compatibility assertion. Existing authenticated fixtures are
+referenced by case ID; their bytes are not duplicated or changed.

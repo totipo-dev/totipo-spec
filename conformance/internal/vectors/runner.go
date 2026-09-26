@@ -62,7 +62,7 @@ func Read(root string) (Manifest, []Case, error) {
 	if e = Decode(b, &m); e != nil {
 		return m, nil, e
 	}
-	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r9" || len(m.Cases) == 0 {
+	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r10" || len(m.Cases) == 0 {
 		return m, nil, fmt.Errorf("invalid manifest header or empty corpus")
 	}
 	seen, paths := map[string]bool{}, map[string]bool{}
@@ -117,9 +117,21 @@ func Read(root string) (Manifest, []Case, error) {
 		paths[entry.Path] = true
 		cases = append(cases, c)
 	}
+	if e := resolveStorage(cases); e != nil {
+		return m, nil, e
+	}
 	return m, cases, nil
 }
 func ValidateShape(c Case, kind string) error {
+	if c.Operation != "storage" && c.Storage != nil {
+		return fmt.Errorf("unexpected storage payload")
+	}
+	if c.Operation == "storage" {
+		if kind != "semantic" || c.Expected != "PASS" || c.Storage == nil || c.Storage.Notes == "" || c.Storage.NamespaceKind != "directory" || len(c.Storage.Entries) == 0 || c.Input != nil || c.Crypto != nil || c.Future != nil || c.Size != nil || c.Bootstrap != nil || c.Graph != nil || c.TOTP != nil || c.Semantic != "" || c.Root != "" || c.PublicKey != "" {
+			return fmt.Errorf("invalid storage payload")
+		}
+		return nil
+	}
 	if c.Operation != "totp" && c.TOTP != nil {
 		return fmt.Errorf("unexpected TOTP payload")
 	}
@@ -163,7 +175,7 @@ func VerifyProfile(root string, m Manifest) error {
 	if e = Decode(b, &p); e != nil {
 		return e
 	}
-	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r9" || len(p.Required) != len(m.Cases) {
+	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r10" || len(p.Required) != len(m.Cases) {
 		return fmt.Errorf("invalid moving profile")
 	}
 	for file, want := range map[string]string{"vectors/manifest.json": p.ManifestSHA256, "spec/totipo-vault-format-v1.md": p.SpecSHA256, "vectors/manifest.schema.json": p.SchemaSHA256, "vectors/case.schema.json": p.CaseSchemaSHA256} {
@@ -184,6 +196,8 @@ func VerifyProfile(root string, m Manifest) error {
 }
 func Run(c Case) error {
 	switch c.Operation {
+	case "storage":
+		return runStorage(c)
 	case "totp":
 		return runTOTP(c)
 	case "dispatch", "crypto":

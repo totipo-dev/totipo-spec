@@ -1,7 +1,7 @@
 {
   "format": "totipo-vector-manifest-v1",
   "protocol": "totipo-v1",
-  "spec_revision": "r9",
+  "spec_revision": "r10",
   "cases": [
     {
       "id": "v1.routing.token-v1.001",
@@ -927,6 +927,102 @@
         "56"
       ],
       "sha256": "c2787120d475f894371b490d37f5096fd255d6a36e385e20bf092bd7f148b07a"
+    },
+    {
+      "id": "v1.storage.objects-v1.001",
+      "category": "storage",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/storage/v1.storage.objects-v1.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "4",
+        "12.4–12.7",
+        "15",
+        "37",
+        "50"
+      ],
+      "sha256": "3a8c261ba2173e4c96473932ddd268ca192ccd8d3a7e1b6c36ca4491ab9b2f15"
+    },
+    {
+      "id": "v1.storage.nonobject-name-ignored.001",
+      "category": "storage",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/storage/v1.storage.nonobject-name-ignored.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "4",
+        "12.4–12.7",
+        "15",
+        "37",
+        "50"
+      ],
+      "sha256": "284547af59f9f5f68d00ecd2670abea0e1b7179a564b6c927d4542e6866b707a"
+    },
+    {
+      "id": "v1.storage.wrong-size-not-opaque.001",
+      "category": "storage",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/storage/v1.storage.wrong-size-not-opaque.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "4",
+        "12.4–12.7",
+        "15",
+        "37",
+        "50"
+      ],
+      "sha256": "5cc354bae9273d51cc01813e6cc8bc7dcc4032a5d34cd6d4149b145bd7e06998"
+    },
+    {
+      "id": "v1.storage.unknown-sibling-ignored.001",
+      "category": "storage",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/storage/v1.storage.unknown-sibling-ignored.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "4",
+        "12.4–12.7",
+        "15",
+        "37",
+        "50"
+      ],
+      "sha256": "f29854606667cbd2e33acceb32edae04279a6b460ebf7d039ca61f2fe759aab8"
+    },
+    {
+      "id": "v1.future.family-compat-shadow.001",
+      "category": "future",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/future/v1.future.family-compat-shadow.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "4",
+        "12.4–12.7",
+        "15",
+        "37",
+        "50"
+      ],
+      "sha256": "ba2036d5e779a82781a0db2d8cc1414642000dee5301fc03dafcd1c37b934ceb"
+    },
+    {
+      "id": "v1.future.family-no-shadow.001",
+      "category": "future",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/future/v1.future.family-no-shadow.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "4",
+        "12.4–12.7",
+        "15",
+        "37",
+        "50"
+      ],
+      "sha256": "f8c8855769544ea0c7603bd73411faac9bd2af9e89179336e1308eb4632bd85b"
     }
   ]
 }

@@ -132,3 +132,43 @@ Graph expectations and reserved-size expectations are explicitly authored from
 the specification, not obtained by running the semantic evaluator. First-generated
 crypto bytes share implementation ancestry with their consumer; independent native
 platform/live-implementation checks remain necessary before RC freeze.
+
+## Storage-family environments (r10)
+
+`storage` cases separate a filesystem environment from authenticated semantic
+fixtures and expected observations/state. `storage.root_hex` supplies the test
+vault key, and `namespace_kind` describes the un-followed `objects-v1` directory.
+`entries` use exact slash-separated paths relative to the configured synchronization
+root and explicit kinds (`regular`, `directory`, `symlink`, `fifo`, `socket`,
+`device`). No environment path is opened on the host filesystem.
+
+A regular entry provides either `fixture_case` (an existing manifest envelope case),
+`data_hex`, or `zero_bytes` (a bounded synthetic zero-filled file length). Omitted
+content means empty bytes. Fixture references resolve only to hash-verified crypto
+or dispatch cases in the same corpus and vault; recursive storage references,
+missing IDs, duplicate paths, and mixed content descriptions fail verification.
+Content readers are invoked only for exact v1-family candidates. Thus the runner
+never decrypts or interprets ignored sibling representations.
+
+`expect` records candidate observations and their classes, sorted learned IDs,
+opaque-unscoped IDs, authoritative readiness, and a query result from the existing
+graph model. `INVALID_STORAGE` is unauthenticated/incorrectly sized storage evidence;
+`INVALID` is failed supported semantic grammar. Neither becomes durable semantic
+knowledge. Query expectations are authored independently of the evaluator.
+
+`objects-v1/` identifies the v1 envelope/storage family, while `OBJECT_VERSION`
+identifies semantic versions within it. Every valid v1-family object is 1024 bytes.
+Unknown sibling namespace names are not authenticated future-version evidence.
+`objects-v2/` examples illustrate arbitrary future layouts, not a defined v2 format.
+
+A future family claiming rolling compatibility publishes authenticated compatibility
+assertions into `objects-v1/`. The shadow case reuses an existing authenticated
+future TOKEN fixture and exercises scoped opaque degradation. The no-shadow case
+learns nothing from the sibling and remains equivalent to its supported baseline:
+that future family is not providing rolling-upgrade compatibility to v1 for that
+state. Explicit candidate selection retains its existing mandatory warning even
+on an ordinary supported baseline; sibling names add no warning or semantic block.
+
+The in-memory model does not implement the live adapter's no-follow OS operations,
+crash durability, or concurrent filesystem rebindings. Those remain work for the
+first independent live consumer.
