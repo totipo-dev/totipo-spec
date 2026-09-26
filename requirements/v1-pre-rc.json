@@ -3,8 +3,8 @@
   "status": "moving-pre-rc",
   "protocol": "totipo-v1",
   "spec_revision": "r10",
-  "manifest_sha256": "bcc237b47c0ed9ad039659dffde84499778a8551a03529c9af4ed0e36eb88422",
-  "spec_sha256": "056303e547b33912967f612e07dd5e1a3f4fd3bc599599348504f60c1b9943a2",
+  "manifest_sha256": "031456a8b35633ab86c9a7c04c6f54ba00697b7577de9f43379ce4932c6bca38",
+  "spec_sha256": "8c93d6e05b0e19682d7875e011aba4961558ff7c606919006b98e3df30219b52",
   "schema_sha256": "59bdc9165b1c7e940031c447c2da640185774a6e4fd52fa0fee0b245061e0440",
   "case_schema_sha256": "bab64fa1257ecc6cb0fdbd0aa0ceea223f93bf33be8031b1dcd0fd041aaf8af9",
   "required_cases": [

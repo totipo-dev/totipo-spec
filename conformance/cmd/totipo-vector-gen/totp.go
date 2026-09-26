@@ -22,6 +22,6 @@ func totpCases() {
 		for i, tm := range times {
 			x.Rows = append(x.Rows, vectors.TOTPRow{UnixSeconds: tm, Counter: counters[i], CounterHex: counterHex[i], Code: v.codes[i]})
 		}
-		add(vectors.Case{ID: "v1.totp.rfc6238-" + v.name + ".001", Operation: "totp", Expected: "PASS", TOTP: x}, "bytes", "40", "56")
+		add(vectors.Case{ID: "v1.totp.rfc6238-" + v.name + ".001", Operation: "totp", Expected: "PASS", TOTP: x}, "bytes", "40", "55")
 	}
 }

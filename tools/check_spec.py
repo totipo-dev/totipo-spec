@@ -1,9 +1,41 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 p = Path("spec/totipo-vault-format-v1.md")
 s = p.read_text(encoding="utf-8")
-norm = s[:s.index("## 59. Revision history")]
+norm = s[:s.index("## 58. Revision history")]
+
+assert [int(n) for n in re.findall(r"^## (\d+)\.", s, re.M)] == list(range(1, 59))
+for heading in [
+    "## 54. Core invariants",
+    "## 55. Required conformance evidence for v1",
+    "## 56. Open work after r10",
+    "## 57. v0 concepts intentionally absent from v1",
+]:
+    assert heading in norm, heading
+
+allocation = norm.split("#### OBJECT_VERSION allocation", 1)[1].split("### 42.2", 1)[0]
+for concept in [
+    r"published.*specification.*process",
+    r"semantic grammars.*envelope family",
+    r"r10\s+assigns\s+`0x01`",
+    r"[Aa]ll other values.*unassigned",
+    r"MUST NOT.*independently assign.*interoperable/shared-vault.*published.*specification",
+    r"no private-use or experimental.*OBJECT_VERSION.*range",
+]:
+    assert re.search(concept, allocation, re.S), concept
+
+historical = norm.split("**Historical note:**", 1)[1].split("\n\n", 1)[0]
+for concept in [
+    r"v0 draft",
+    r"never released.*implemented/deployed",
+    r"not a supported predecessor of v1",
+    r"v1 defines no migration protocol from v0",
+]:
+    assert re.search(concept, historical), concept
+assert not re.search(r"^## .*Migration from v0", norm, re.M)
+assert "Migration creates a new v1 vault" not in norm
 
 required = [
     "**Revision:** r10",

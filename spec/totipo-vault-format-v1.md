@@ -5,7 +5,7 @@
 **Revision:** r10  
 **Scope:** encrypted append-only TOTP vault format, complete-state token assertions, token-local causal history, device presentation history, durable local rollback evidence, bootstrap semantics, cryptographic construction, canonical encoding, and writer/application safety.
 
-**Compatibility:** v1 is a new protocol line. It is not byte-compatible or semantically compatible with Totipo Vault Format v0. A v1 implementation MUST NOT interpret v0 semantic objects as v1 objects or silently reuse v0 protocol literals. Migration from v0 creates a new v1 vault.
+**Historical note:** Earlier Totipo design work used a v0 draft. It was never released as an implemented/deployed protocol and is not a supported predecessor of v1. v1 defines no migration protocol from v0; historical v0 draft artifacts are outside the v1 protocol.
 
 **Revision 10 summary:** v1/r10 makes the envelope-family boundary explicit in storage. The Totipo v1 envelope family owns the exact top-level namespace `objects-v1/`; every candidate in that namespace uses the fixed 1024-byte v1-family envelope and frozen routing contract. `OBJECT_VERSION` continues to version semantics inside that family. A genuinely new envelope/storage family uses a different sibling namespace (for example `objects-v2/`) and is not parsed or trusted merely because that directory exists. A future family that claims rolling-upgrade interoperability with v1 must publish authenticated v1-family compatibility assertions into `objects-v1/`, so old clients can degrade through the existing `OPAQUE_ROUTABLE` machinery rather than going blind.
 
@@ -1831,6 +1831,10 @@ All fixed-width protocol integers use the exact listed width and unsigned big-en
 
 Tag `0x0003` is reserved in v1.
 
+#### OBJECT_VERSION allocation
+
+`OBJECT_VERSION` values are allocated by the published Totipo specification process for semantic grammars within an envelope family. r10 assigns `0x01`. All other values are unassigned by r10. Conforming implementations MUST NOT independently assign an unassigned value for interoperable/shared-vault use without a published Totipo specification allocating that value. r10 defines no private-use or experimental `OBJECT_VERSION` range.
+
 ### 42.2 TOKEN tags
 
 | Tag | Name | Encoding |
@@ -2344,30 +2348,7 @@ A party with `K_root` remains capable of authoring arbitrary new vault-valid TOK
 
 ---
 
-## 54. Migration from v0
-
-v1 does not reuse a v0 `K_root`, v0 object namespace, v0 semantic objects, or v0 protocol literals in place. The current v1 envelope family uses the distinct `objects-v1/` namespace.
-
-Migration creates a new v1 vault.
-
-A migration tool:
-
-1. opens and validates the v0 vault with a conforming v0 implementation;
-2. derives the best available v0 user-visible token states;
-3. asks the user to resolve/select any source conflicts or degraded states that require a decision;
-4. creates a fresh v1 `VAULT` with fresh `K_root`;
-5. creates fresh v1 P-256 device provenance identities and corresponding DEVICE objects;
-6. assigns fresh v1 `TOKEN_ID`s;
-7. creates one parentless complete v1 `TOKEN` for each selected logical token;
-8. does not copy v0 graph history into the v1 object graph.
-
-Migration does not erase v0 data or provider history.
-
-Clients migrated to v1 SHOULD stop writing the old v0 vault.
-
----
-
-## 55. Core invariants
+## 54. Core invariants
 
 ```text
 K_root is the cryptographic identity of one v1 vault.
@@ -2413,7 +2394,7 @@ authenticated candidate material unusable.
 
 ---
 
-## 56. Required conformance evidence for v1
+## 55. Required conformance evidence for v1
 
 Before v1 byte-level release-candidate freeze, executable evidence MUST cover at least:
 
@@ -2602,26 +2583,25 @@ At least two independent implementations MUST consume the frozen v1 vectors befo
 
 ---
 
-## 57. Open work after r10
+## 56. Open work after r10
 
 r10 retains the complete-state/durable-graph and opaque-routing architecture, and makes envelope-family evolution explicit through the fixed `objects-v1/` namespace plus authenticated compatibility projections from genuinely new future families.
 
 Before v1-rc1:
 
 1. extend/promote the executable semantic oracle to cover supported/opaque-routable graph nodes, opaque-unscoped evidence, scoped degradation, discovery, candidate use, staged folds, DEVICE presentation, timestamp, and continuity-baseline behavior;
-2. port retained v0 crypto/bootstrap/TOTP conformance cases to v1 domains and object bytes;
-3. replace v0 field/lifecycle semantic cases with v1 whole-state cases;
-4. continue adversarial review of state authority vs provenance, durable topology vs value availability, and parent semantic failure vs child TOKEN state;
-5. verify durable graph persistence/integrity failures, discovery completeness, candidate-use under incomplete discovery, local continuity reset, and confirmation freshness across crash/restart and multi-client synchronization;
-6. generate exact canonical `TOKEN` and `DEVICE` byte/crypto vectors including variable-length DER ECDSA signatures;
-7. cross-verify P-256 provenance vectors in Java, Android Keystore, and Apple CryptoKit;
-8. exercise 1006-byte envelope boundaries, four-parent maximum-field TOKENs, five-parent rejection, fourteen-parent maximum-display DEVICEs, fifteen-parent DEVICE folding, and linear wide-frontier folding;
-9. test filesystem/crash ordering, graph-node durability, synchronized intermediate deletion, security-memory rollback/reset, and confirmation freshness across bounded convergence batches;
-10. perform an external specification/security review before declaring v1 release-candidate freeze.
+2. complete remaining v1 crypto/bootstrap/TOTP conformance coverage;
+3. continue adversarial review of state authority vs provenance, durable topology vs value availability, and parent semantic failure vs child TOKEN state;
+4. verify durable graph persistence/integrity failures, discovery completeness, candidate-use under incomplete discovery, local continuity reset, and confirmation freshness across crash/restart and multi-client synchronization;
+5. generate exact canonical `TOKEN` and `DEVICE` byte/crypto vectors including variable-length DER ECDSA signatures;
+6. cross-verify P-256 provenance vectors in Java, Android Keystore, and Apple CryptoKit;
+7. exercise 1006-byte envelope boundaries, four-parent maximum-field TOKENs, five-parent rejection, fourteen-parent maximum-display DEVICEs, fifteen-parent DEVICE folding, and linear wide-frontier folding;
+8. test filesystem/crash ordering, graph-node durability, synchronized intermediate deletion, security-memory rollback/reset, and confirmation freshness across bounded convergence batches;
+9. perform an external specification/security review before declaring v1 release-candidate freeze.
 
 ---
 
-## 58. v0 concepts intentionally absent from v1
+## 57. v0 concepts intentionally absent from v1
 
 The following v0 concepts are not part of Totipo v1:
 
@@ -2651,7 +2631,7 @@ The security goals previously served by those mechanisms are addressed by comple
 
 ---
 
-## 59. Revision history
+## 58. Revision history
 
 ### v1/r10
 

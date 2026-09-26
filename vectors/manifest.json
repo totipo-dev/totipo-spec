@@ -898,7 +898,7 @@
       "expected": "PASS",
       "spec_sections": [
         "40",
-        "56"
+        "55"
       ],
       "sha256": "f3fed610df11e572f1c5c569e8822c5d1076df40197fadb559eca1a4aa0b6625"
     },
@@ -911,7 +911,7 @@
       "expected": "PASS",
       "spec_sections": [
         "40",
-        "56"
+        "55"
       ],
       "sha256": "eb9baec09844984cb7d7072164beb4d794ab9fb997428ca06ffc92d68ea5f25b"
     },
@@ -924,7 +924,7 @@
       "expected": "PASS",
       "spec_sections": [
         "40",
-        "56"
+        "55"
       ],
       "sha256": "c2787120d475f894371b490d37f5096fd255d6a36e385e20bf092bd7f148b07a"
     },
