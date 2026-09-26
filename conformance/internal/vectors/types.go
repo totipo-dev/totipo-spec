@@ -37,7 +37,24 @@ type Pin struct {
 	ID     string `json:"id"`
 	SHA256 string `json:"sha256"`
 }
+type TOTP struct {
+	Source    string    `json:"source"`
+	Notes     string    `json:"notes"`
+	Algorithm byte      `json:"algorithm"`
+	Digits    byte      `json:"digits"`
+	Period    uint32    `json:"period"`
+	T0        uint64    `json:"t0"`
+	Secret    string    `json:"secret_hex"`
+	Rows      []TOTPRow `json:"rows"`
+}
+type TOTPRow struct {
+	UnixSeconds uint64 `json:"unix_time_seconds"`
+	Counter     uint64 `json:"counter"`
+	CounterHex  string `json:"counter_hex"`
+	Code        string `json:"code"`
+}
 type Case struct {
+	TOTP      *TOTP          `json:"totp,omitempty"`
 	Format    string         `json:"format"`
 	ID        string         `json:"id"`
 	Operation string         `json:"operation"`

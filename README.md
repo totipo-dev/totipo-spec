@@ -67,7 +67,7 @@ build cache under `.direnv/` for the jailed development environment. When runnin
 Go directly there, set `GOCACHE="$PWD/.direnv/go-build"` from the repository root.
 The module tests run with `go -C conformance test ./...`.
 
-The [manifest](vectors/manifest.json) currently contains 68 cases. The
+The [manifest](vectors/manifest.json) currently contains 71 cases. The
 [moving pre-RC profile](requirements/v1-pre-rc.json) pins their IDs and hashes;
 it is not a release or a frozen RC profile. Normal checks never regenerate cases.
 

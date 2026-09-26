@@ -2,11 +2,34 @@
 
 Date: 2026-09-25. Protocol: Totipo v1, revision r9. Status: moving pre-RC evidence.
 
-The Go reference consumer passes all **68 manifest cases**. `make check` passes.
-All 62 IDs in the supplied `vectors/CASE_PLAN.md` are present, together with three
-bootstrap cases and three additional graph cases. The normative specification is
+At the original implementation handoff, the Go reference consumer passed all
+**68 manifest cases**, and `make check` passed.
+All 62 originally planned IDs were present, together with three bootstrap cases
+and three additional graph cases. At that handoff, the specification was
 byte-for-byte identical to the supplied seed. No release, tag, or frozen RC
 profile was created.
+
+## Post-implementation acceptance update
+
+The implementation was subsequently committed as
+`8042729fe6b1c00fc57e284000f39c060d76d773` (`v1 work`), which is the cleanup
+baseline for both local `main` and `origin/main`. The pushed
+[Totipo v1 conformance run](https://github.com/totipo-dev/totipo-spec/actions/runs/36197834195)
+completed successfully for that exact commit; this was verified through the
+GitHub Actions API during cleanup. Current main contains the accepted Go/vector
+implementation.
+
+The GitHub refs API also confirms remote `archive/v0` at
+`5157f14e1af9d28b6f15db20a51cd384f97c8a37`, matching the local and remote-tracking
+archive refs. Remote tags/releases were not enumerated during cleanup; none were
+modified. The earlier lack of SSH did not prevent these read-only HTTPS checks.
+
+Final cleanup retires the completed plan and temporary bundle, removes the
+transition inventory, makes three non-semantic rationale edits, and adds three
+RFC 6238 cases (18 known-answer rows). The current corpus contains **71 cases**;
+all 68 original case files remain byte-identical. See the
+[final cleanup report](V1_FINAL_CLEANUP_REPORT.md) for current validation and scope.
+The coverage and validation tables below describe the original 68-case handoff.
 
 ## Historical preservation and commits
 
@@ -19,9 +42,10 @@ The pre-reset v0 HEAD was:
 The local `archive/v0` branch points to that exact commit. It preserves the old
 protocol, corpus, Go implementation, reviews, and build files without copying
 them into current main. No existing branch was moved, no history rewritten, and
-no tag/release changed. There were no tags in this local checkout. The attempted
+no tag/release changed. During original execution there were no tags in the local checkout. The attempted
 `git fetch --tags --prune` could not complete because `ssh` is unavailable, so
-remote tags/releases were not independently verified. The archive was not pushed.
+remote tags/releases were not independently verified then. The archive was not
+pushed by the agent during that session; its later remote presence is verified above.
 
 The user explicitly authorized replacing the dirty working tree, superseding the
 initial clean-tree stop, and then manually committed the staged historical reset:
@@ -30,15 +54,11 @@ initial clean-tree stop, and then manually committed the staged historical reset
 0fe389345ecf6f4cf1a043b369bfd7ed30ee8aa0 archive v0 and reset main to v1/r9
 ```
 
-This is the only new commit. The subsequent Go, vector, profile, documentation,
-and CI implementation remains uncommitted for the user to review and commit.
-No further staging or commits were performed after the user chose manual commits.
-The reset boundary remains separate and was not squashed.
-
-`AGENT_INSTRUCTIONS.md`, `PROPOSED_TREE.md`, `SHA256SUMS.txt`, and `copy-to-repo/`
-are user-supplied local inputs, intentionally excluded from implementation changes
-and commits. A temporary copy of those inputs also exists at
-`/tmp/totipo-v1-input/`; it is not a repository artifact.
+At the original agent handoff, only the reset was committed and the implementation
+was left for the user's manual commit. The user subsequently committed it as
+`8042729`; the reset boundary remains separate and was not squashed. The temporary
+instruction/bundle inputs were included in that human commit and have now been
+removed in cleanup after verifying their reset-only purpose.
 
 ## Current tree and implementation
 
@@ -158,8 +178,8 @@ UTF-8/field/range errors, malformed provenance, unsigned timestamp extremes,
 high-S/low-S signatures, canonical DER rejection, and short-signature planning.
 
 CI now runs only current v1 work on Linux, macOS, and Windows with Go 1.23 and
-stable. Linux adds race/fuzz checks. Those remote jobs have been configured but
-were not executed in this session; local results are Linux with Go 1.26.7.
+stable. Linux adds race/fuzz checks. Those remote jobs had not yet executed at the original handoff; the later
+successful run is recorded above. Original local results were Linux with Go 1.26.7.
 
 ## Dependencies and preserved Nix setup
 
@@ -188,7 +208,8 @@ JSON-schema dependency, or second synthetic protocol implementation.
 ## Ambiguities, limitations, and next live-implementation work
 
 No concrete contradiction requiring a wire-format or semantic change was found.
-No r9 normative wording was changed or proposed. Supported assertion validity,
+No r9 normative wording was changed or proposed during implementation; the later
+cleanup changes rationale wording only. Supported assertion validity,
 provenance validity, and opaque routing were implemented as separate checks,
 including the explicit acceptance of structurally sized but off-curve DEVICE
 public-key bytes as rejected provenance rather than invalid TOKEN authority.
@@ -203,7 +224,7 @@ The remaining work includes:
   staged bounded-fold publication/interruption, and concurrent-client workflows.
   Capacity/fan-in is implemented; the graph fold-timestamp case supplies a shared
   timestamp and does not implement or validate an application writer transaction.
-- Broader adversarial/negative corpus coverage, TOTP RFC 6238 vectors, native
+- Broader adversarial/negative corpus coverage, native
   platform password/UTF-8 behavior, and Java/Android/Apple P-256 cross-verification.
 - Independent consumption by the first real Totipo implementation and external
   protocol/security review before a frozen RC profile or release.
@@ -214,239 +235,9 @@ state engine, then add platform persistence/freshness evidence. Compare semantic
 and signature-input bytes exactly, verify fixed signatures, and do not demand
 fresh-signature byte equality. Keep current profile changes explicitly reviewed.
 
-## Exact file changes
+## Change history
 
-The following inventory compares the intended resulting repository tree with
-`archive/v0` at the recorded pre-reset commit. It includes the already committed
-reset and the uncommitted implementation, including the user's flake adjustment.
-`A` means added, `D` removed, and `M` modified. Untracked instruction/bundle inputs,
-Go caches, temporary files, and `.git` metadata are excluded. It is also available
-as [`V1_VECTOR_FILE_CHANGES.tsv`](V1_VECTOR_FILE_CHANGES.tsv).
-
-```text
-M .github/workflows/conformance.yml
-M .gitignore
-M CONTRIBUTING.md
-M Makefile
-M README.md
-D REPO_CLEANUP_REPORT.md
-D conformance/FUZZING.md
-M conformance/README.md
-M conformance/cmd/totipo-conformance/main.go
-D conformance/cmd/totipo-conformance/main_test.go
-D conformance/cmd/totipo-requirements/main.go
-D conformance/cmd/totipo-requirements/main_test.go
-A conformance/cmd/totipo-vector-gen/graph.go
-A conformance/cmd/totipo-vector-gen/main.go
-M conformance/go.mod
-M conformance/go.sum
-D conformance/internal/bootstrap/bootstrap.go
-D conformance/internal/bootstrap/bootstrap_test.go
-D conformance/internal/corpus/corpus.go
-D conformance/internal/corpus/corpus_test.go
-D conformance/internal/corpus/trace.go
-A conformance/internal/cryptov1/crypto.go
-A conformance/internal/cryptov1/crypto_test.go
-D conformance/internal/dispatch/dispatch.go
-D conformance/internal/ed25519profile/doc.go
-D conformance/internal/ed25519profile/verify.go
-D conformance/internal/envelope/envelope.go
-A conformance/internal/graph/graph.go
-A conformance/internal/graph/graph_test.go
-D conformance/internal/model/model.go
-D conformance/internal/model/model_test.go
-D conformance/internal/model/safety.go
-A conformance/internal/object/object.go
-A conformance/internal/object/object_test.go
-D conformance/internal/objectcrypto/objectcrypto.go
-D conformance/internal/presentation/presentation.go
-D conformance/internal/publication/publication.go
-D conformance/internal/publication/publication_test.go
-D conformance/internal/referenceoracle/memory.go
-D conformance/internal/referenceoracle/oracle.go
-D conformance/internal/requirements/artifacts.go
-D conformance/internal/requirements/artifacts_test.go
-D conformance/internal/requirements/generate.go
-D conformance/internal/requirements/profile.go
-D conformance/internal/requirements/profile_test.go
-D conformance/internal/runner/fuzz_test.go
-D conformance/internal/runner/independence_test.go
-D conformance/internal/runner/phase2_test.go
-D conformance/internal/runner/runner.go
-D conformance/internal/runner/runner_test.go
-D conformance/internal/securitymemory/memory.go
-D conformance/internal/securitymemory/memory_test.go
-M conformance/internal/tlv/tlv.go
-A conformance/internal/tlv/tlv_test.go
-D conformance/internal/totp/totp.go
-D conformance/internal/totp/totp_test.go
-A conformance/internal/vectors/runner.go
-A conformance/internal/vectors/runner_test.go
-A conformance/internal/vectors/types.go
-D conformance/reference/README.md
-D conformance/reference/client/client.go
-D conformance/reference/fault/fault.go
-D conformance/reference/integration/crash_test.go
-D conformance/reference/integration/filesystem_test.go
-D conformance/reference/integration/integration_test.go
-D conformance/reference/localstate/linux.go
-D conformance/reference/localstate/state.go
-D conformance/reference/storage/linux.go
-D conformance/reference/storage/storage.go
-D conformance/review-inventory.sha256
-M flake.nix
-D go.work.sum
-M requirements/README.md
-D requirements/v0-rc1.json
-D requirements/v0-rc1.manifest.sha256
-A requirements/v1-pre-rc.json
-D review/README.md
-A review/V1_R8_FINAL_CONSISTENCY_ADVERSARIAL_REVIEW.md
-A review/V1_R8_SIMPLIFICATION_REVIEW.md
-A review/V1_R9_FORWARD_COMPAT_REVIEW.md
-A review/V1_VECTOR_FILE_CHANGES.tsv
-A review/V1_VECTOR_IMPLEMENTATION_REPORT.md
-D review/ed25519/REVIEW.md
-D review/ed25519/review.go
-D review/phase1/IMPLEMENTATION_REPORT.md
-D review/phase2/CASE_INDEX.md
-D review/phase2/IMPLEMENTATION_REPORT.md
-D review/phase2/REVIEW.md
-D review/phase2/inventory.sha256
-D review/phase3/IMPLEMENTATION_REPORT.md
-D review/phase3/README.md
-D review/phase3/local-results.json
-D review/phase3/source.sha256
-D review/process/AGENT_INSTRUCTIONS.md
-D review/process/PHASE2_AGENT_INSTRUCTIONS.md
-D review/process/PHASE3_AGENT_INSTRUCTIONS.md
-D review/process/README.md
-D review/process/SEED_REVIEW_README.md
-D review/releases/v0-rc1/V0_RC1_AGENT_INSTRUCTIONS.md
-D review/releases/v0-rc1/V0_RC1_REQUIREMENTS_REPORT.md
-D review/reports/r31-executable-review.md
-D review/reports/r31-java-python-crosscheck-report.md
-D review/reports/r32-bootstrap-review.md
-D review/reports/totipo-vault-v0-r35-review-disposition.md
-D review/reports/totp-vault-v0-r31-tlv-corpus-report.md
-D review/source-code/BootstrapV0.java
-D review/source-code/LifecycleOracle.java
-D review/source-code/R31Review.java
-D review/source-code/r31-java-vector-crosscheck.py
-D review/source-code/totp-vault-v0-r31-tlv-corpus.py
-D review/source-code/totp-vault-v0-r32-bootstrap-vectors.py
-D review/source-vectors/r31-crosscheck-SHA256SUMS.txt
-D review/source-vectors/r31-object-vectors.txt
-D review/source-vectors/totp-vault-v0-r31-tlv-corpus-SHA256SUMS.txt
-D review/source-vectors/totp-vault-v0-r31-tlv-corpus.json
-D review/source-vectors/totp-vault-v0-r32-SHA256SUMS.txt
-D review/source-vectors/totp-vault-v0-r32-bootstrap-vectors.txt
-D spec/totipo-vault-format-v0.md
-A spec/totipo-vault-format-v1.md
-A tools/check_spec.py
-A tools/check_vectors.py
-D tools/manifest/main.go
-D tools/normalize.go
-D tools/phase2/main.go
-D tools/phase2/memory.go
-D tools/phase2/presentation.go
-D tools/phase2/safety.go
-A tools/test_check_vectors.py
-A vectors/CASE_PLAN.md
-A vectors/FORMAT.md
-A vectors/README.md
-A vectors/case.schema.json
-A vectors/cases/bootstrap/v1.bootstrap.ascii.001.json
-A vectors/cases/bootstrap/v1.bootstrap.empty.001.json
-A vectors/cases/bootstrap/v1.bootstrap.unicode.001.json
-A vectors/cases/candidate/v1.candidate.conflict-a.001.json
-A vectors/cases/candidate/v1.candidate.continuity-block.001.json
-A vectors/cases/candidate/v1.candidate.current-peer-missing.001.json
-A vectors/cases/candidate/v1.candidate.discovery-incomplete.001.json
-A vectors/cases/candidate/v1.candidate.historical-current-missing.001.json
-A vectors/cases/candidate/v1.candidate.opaque-current.001.json
-A vectors/cases/candidate/v1.candidate.persistence-block.001.json
-A vectors/cases/crypto/v1.crypto.device-root.001.json
-A vectors/cases/crypto/v1.crypto.future-device-opaque.001.json
-A vectors/cases/crypto/v1.crypto.future-token-opaque.001.json
-A vectors/cases/crypto/v1.crypto.token-child.001.json
-A vectors/cases/crypto/v1.crypto.token-root.001.json
-A vectors/cases/device/v1.device.explicit-id.001.json
-A vectors/cases/device/v1.device.id-mismatch.001.json
-A vectors/cases/encoding/v1.encoding.author-time-u64max.001.json
-A vectors/cases/encoding/v1.encoding.author-time-zero.001.json
-A vectors/cases/encoding/v1.encoding.device-root.001.json
-A vectors/cases/encoding/v1.encoding.duplicate-nonrepeatable.001.json
-A vectors/cases/encoding/v1.encoding.parent-count-mismatch.001.json
-A vectors/cases/encoding/v1.encoding.parent-order.001.json
-A vectors/cases/encoding/v1.encoding.token-root.001.json
-A vectors/cases/encoding/v1.encoding.utf8-boundary.001.json
-A vectors/cases/future/v1.future.concurrent-supported-opaque.001.json
-A vectors/cases/future/v1.future.device-presentation.001.json
-A vectors/cases/future/v1.future.disappearance-retains-routing.001.json
-A vectors/cases/future/v1.future.scoped-token.001.json
-A vectors/cases/future/v1.future.supported-descendant.001.json
-A vectors/cases/future/v1.future.unrelated-token.001.json
-A vectors/cases/future/v1.future.unscoped-authoritative-block.001.json
-A vectors/cases/future/v1.future.unscoped-candidate-use.001.json
-A vectors/cases/future/v1.future.version-does-not-order.001.json
-A vectors/cases/graph/v1.graph.conflicting-concurrent.001.json
-A vectors/cases/graph/v1.graph.cycle-integrity-failure.001.json
-A vectors/cases/graph/v1.graph.equal-concurrent.001.json
-A vectors/cases/graph/v1.graph.global-object-id-conflict.001.json
-A vectors/cases/graph/v1.graph.intermediate-disappears.001.json
-A vectors/cases/graph/v1.graph.late-parent.001.json
-A vectors/cases/graph/v1.graph.missing-current-value.001.json
-A vectors/cases/graph/v1.graph.reappearance-mismatch.001.json
-A vectors/cases/graph/v1.graph.reappearance.001.json
-A vectors/cases/graph/v1.graph.sequential.001.json
-A vectors/cases/graph/v1.graph.wrong-identity-parent.001.json
-A vectors/cases/provenance/v1.provenance.der-max-valid.001.json
-A vectors/cases/provenance/v1.provenance.der-short-valid.001.json
-A vectors/cases/provenance/v1.provenance.token-rejected.001.json
-A vectors/cases/provenance/v1.provenance.token-unresolved.001.json
-A vectors/cases/provenance/v1.provenance.token-verified.001.json
-A vectors/cases/routing/v1.routing.device-future-opaque.001.json
-A vectors/cases/routing/v1.routing.device-v1.001.json
-A vectors/cases/routing/v1.routing.future-device-malformed-prefix.001.json
-A vectors/cases/routing/v1.routing.future-token-malformed-prefix.001.json
-A vectors/cases/routing/v1.routing.token-future-opaque.001.json
-A vectors/cases/routing/v1.routing.token-v1.001.json
-A vectors/cases/routing/v1.routing.unknown-type-unscoped.001.json
-A vectors/cases/size/v1.size.device-max-14.001.json
-A vectors/cases/size/v1.size.device-max-15-fold.001.json
-A vectors/cases/size/v1.size.short-der-no-extra-parent.001.json
-A vectors/cases/size/v1.size.token-max-4.001.json
-A vectors/cases/size/v1.size.token-max-5-fold.001.json
-A vectors/cases/timestamp/v1.timestamp.equal-value-different-times.001.json
-A vectors/cases/timestamp/v1.timestamp.fold-common-time.001.json
-A vectors/cases/timestamp/v1.timestamp.i64max.001.json
-A vectors/cases/timestamp/v1.timestamp.normal.001.json
-A vectors/cases/timestamp/v1.timestamp.u64max.001.json
-A vectors/cases/timestamp/v1.timestamp.zero.001.json
-A vectors/manifest.json
-A vectors/manifest.schema.json
-D vectors/v0/README.md
-D vectors/v0/bootstrap/cases.json
-D vectors/v0/bootstrap/supplemental.json
-D vectors/v0/dispatch/supplemental.json
-D vectors/v0/ed25519/README.md
-D vectors/v0/ed25519/phase2.json
-D vectors/v0/envelope/cases.json
-D vectors/v0/envelope/supplemental.json
-D vectors/v0/lifecycle/README.md
-D vectors/v0/lifecycle/cases.json
-D vectors/v0/manifest.sha256
-D vectors/v0/object-crypto/cases.json
-D vectors/v0/presentation/README.md
-D vectors/v0/presentation/phase2.json
-D vectors/v0/recovery/README.md
-D vectors/v0/recovery/phase2.json
-D vectors/v0/tlv/cases.json
-D vectors/v0/tlv/supplemental.json
-D vectors/v0/totp/cases.json
-D vectors/v0/totp/supplemental.json
-D vectors/v0/transitions/README.md
-D vectors/v0/transitions/phase2.json
-D vectors/v0/transitions/use-profile.json
-```
+Exact file history is maintained by Git: reset commit
+`0fe389345ecf6f4cf1a043b369bfd7ed30ee8aa0` and accepted implementation commit
+`8042729fe6b1c00fc57e284000f39c060d76d773`. The transition-only file inventory and
+its large appendix were retired during final cleanup.

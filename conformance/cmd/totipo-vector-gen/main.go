@@ -343,6 +343,7 @@ func main() {
 	initial()
 	fullCrypto()
 	graphCases()
+	totpCases()
 	profile()
 	fmt.Printf("wrote %d cases and moving pre-RC profile\n", len(manifest.Cases))
 }

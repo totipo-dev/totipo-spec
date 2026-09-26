@@ -701,7 +701,7 @@ nonce from OBJECT_ID
 AES-GCM
 ```
 
-A 1024-byte envelope intentionally trades some maximum one-object parent fan-in for half the synchronized bytes of r1's 2048-byte envelope. Sections 45 and 47 define bounded multi-object convergence when a complete frontier cannot fit in one object.
+The 1024-byte envelope balances padding/privacy, transport/storage overhead, and bounded one-object parent fan-in. Sections 45 and 47 define bounded multi-object convergence when a complete frontier cannot fit in one object.
 
 ## 15. Object reading and future-version dispatch
 
@@ -1367,7 +1367,7 @@ If deletion/restoration races with another edit, the resulting complete states d
 
 The protocol MUST NOT field-merge a tombstoned old credential and a concurrent live new credential into a synthesized state.
 
-This whole-state rule replaces v0's lifecycle-witness machinery.
+Lifecycle decisions use the same complete-state assertions and causal rules as other token changes.
 
 
 ---
@@ -2186,7 +2186,7 @@ Every valid semantic object file is exactly 1024 bytes.
 
 Fixed size prevents exact semantic length/type leakage through object file length but does not provide traffic-analysis resistance.
 
-Full-state `TOKEN` objects intentionally repeat token secrets and metadata. This increases encrypted redundancy compared with v0 partial updates and is accepted in exchange for history-independent value availability. The 1024-byte fixed size halves r1's object bytes while retaining the existing field limits.
+Full-state `TOKEN` objects intentionally repeat token secrets and metadata. This increases encrypted redundancy compared with delta-based designs and is accepted in exchange for history-independent value availability. The 1024-byte fixed size balances padding/privacy and transport/storage overhead while retaining the field limits and bounded parent fan-in.
 
 ---
 

@@ -3,6 +3,7 @@ package vectors
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"totipo/conformance/internal/cryptov1"
 	"totipo/conformance/internal/graph"
 	"totipo/conformance/internal/object"
+	"totipo/conformance/internal/totp"
 )
 
 func Decode(p []byte, v any) error {
@@ -118,6 +120,9 @@ func Read(root string) (Manifest, []Case, error) {
 	return m, cases, nil
 }
 func ValidateShape(c Case, kind string) error {
+	if c.Operation != "totp" && c.TOTP != nil {
+		return fmt.Errorf("unexpected TOTP payload")
+	}
 	switch c.Operation {
 	case "dispatch", "crypto":
 		if c.Semantic == "" || c.Root == "" || c.Crypto == nil || c.Graph != nil || c.Size != nil || c.Bootstrap != nil {
@@ -139,6 +144,11 @@ func ValidateShape(c Case, kind string) error {
 		if kind != "semantic" || c.Graph == nil || len(c.Graph.Steps) == 0 || c.Crypto != nil || c.Size != nil || c.Bootstrap != nil || c.Input != nil {
 			return fmt.Errorf("invalid graph payload")
 		}
+	case "totp":
+		if kind != "bytes" || c.Expected != "PASS" || c.TOTP == nil || len(c.TOTP.Rows) == 0 || c.TOTP.Source == "" || c.TOTP.Notes == "" || c.TOTP.T0 != 0 || c.Input != nil || c.Crypto != nil || c.Future != nil || c.Size != nil || c.Bootstrap != nil || c.Graph != nil || c.Semantic != "" || c.Root != "" || c.PublicKey != "" {
+			return fmt.Errorf("invalid TOTP payload")
+		}
+
 	default:
 		return fmt.Errorf("unknown operation %q", c.Operation)
 	}
@@ -174,6 +184,8 @@ func VerifyProfile(root string, m Manifest) error {
 }
 func Run(c Case) error {
 	switch c.Operation {
+	case "totp":
+		return runTOTP(c)
 	case "dispatch", "crypto":
 		return runEnvelope(c)
 	case "size":
@@ -437,6 +449,36 @@ func runGraph(c Case) error {
 	}
 	if checks == 0 || c.Expected != "PASS" {
 		return fmt.Errorf("no graph assertions or invalid expectation")
+	}
+	return nil
+}
+
+func runTOTP(c Case) error {
+	x := c.TOTP
+	if x.T0 != 0 || x.Period == 0 || len(x.Rows) == 0 {
+		return fmt.Errorf("invalid TOTP parameters")
+	}
+	secret, e := unhex(x.Secret)
+	if e != nil {
+		return e
+	}
+	for i, row := range x.Rows {
+		counter := row.UnixSeconds / uint64(x.Period)
+		if row.Counter != counter {
+			return fmt.Errorf("TOTP row %d counter mismatch", i)
+		}
+		var b [8]byte
+		binary.BigEndian.PutUint64(b[:], counter)
+		if e := equalHex("TOTP counter", row.CounterHex, b[:]); e != nil {
+			return e
+		}
+		code, e := totp.Code(x.Algorithm, secret, x.Digits, x.Period, row.UnixSeconds)
+		if e != nil {
+			return e
+		}
+		if code != row.Code {
+			return fmt.Errorf("TOTP row %d code mismatch", i)
+		}
 	}
 	return nil
 }

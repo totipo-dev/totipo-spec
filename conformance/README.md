@@ -19,7 +19,7 @@ parser, crypto rejection, signing, and graph invariants. Bounded fuzzing covers
 semantic parsing, encrypted envelopes, and graph arrival/disappearance order.
 
 Packages separate fixed TLV framing, semantic object parsing, cryptographic
-processing, durable graph semantics, and vector IO. `object.Dispatch` takes
+processing, RFC 6238 TOTP computation, durable graph semantics, and vector IO. `object.Dispatch` takes
 already authenticated semantic bytes. Storage consumers must first call
 `cryptov1.Keys.Open`, which authenticates the envelope, canonical padding, and
 keyed object ID. Supported malformed bodies are invalid; future bodies are

@@ -3,10 +3,10 @@
   "status": "moving-pre-rc",
   "protocol": "totipo-v1",
   "spec_revision": "r9",
-  "manifest_sha256": "dd48dcc21aed051dcc3624188aa4bf5674a1133900b7ce0c1a6d0c385504934a",
-  "spec_sha256": "66123683b0b037f68fc0352ceb89fd4d741dfe4f8bbb4d0e1e52239f477e1e5b",
+  "manifest_sha256": "c0e7aa0e3633e789f3c6649c21b217f08474904b696809caea9005abd931cd15",
+  "spec_sha256": "99253a68cc926e43f9b16595dd060911f9067f3d15d23293638dd554455e62bb",
   "schema_sha256": "59bdc9165b1c7e940031c447c2da640185774a6e4fd52fa0fee0b245061e0440",
-  "case_schema_sha256": "4feaf29a728b1b57dcf9ac198b104e5308cf1f95372f1cf975ab33e9efe86d24",
+  "case_schema_sha256": "9e8b6c2724dd669582e8eb32d18bfce32568209cc30b2f272870036e2002c646",
   "required_cases": [
     {
       "id": "v1.routing.token-v1.001",
@@ -279,6 +279,18 @@
     {
       "id": "v1.graph.reappearance-mismatch.001",
       "sha256": "ae6954abf6c89659c477ae723c600b1d111a4a959abef02ea94f2df8eede9780"
+    },
+    {
+      "id": "v1.totp.rfc6238-sha1.001",
+      "sha256": "f3fed610df11e572f1c5c569e8822c5d1076df40197fadb559eca1a4aa0b6625"
+    },
+    {
+      "id": "v1.totp.rfc6238-sha256.001",
+      "sha256": "eb9baec09844984cb7d7072164beb4d794ab9fb997428ca06ffc92d68ea5f25b"
+    },
+    {
+      "id": "v1.totp.rfc6238-sha512.001",
+      "sha256": "c2787120d475f894371b490d37f5096fd255d6a36e385e20bf092bd7f148b07a"
     }
   ]
 }

@@ -888,6 +888,45 @@
         "31–38"
       ],
       "sha256": "ae6954abf6c89659c477ae723c600b1d111a4a959abef02ea94f2df8eede9780"
+    },
+    {
+      "id": "v1.totp.rfc6238-sha1.001",
+      "category": "totp",
+      "kind": "bytes",
+      "normative": true,
+      "path": "cases/totp/v1.totp.rfc6238-sha1.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "40",
+        "56"
+      ],
+      "sha256": "f3fed610df11e572f1c5c569e8822c5d1076df40197fadb559eca1a4aa0b6625"
+    },
+    {
+      "id": "v1.totp.rfc6238-sha256.001",
+      "category": "totp",
+      "kind": "bytes",
+      "normative": true,
+      "path": "cases/totp/v1.totp.rfc6238-sha256.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "40",
+        "56"
+      ],
+      "sha256": "eb9baec09844984cb7d7072164beb4d794ab9fb997428ca06ffc92d68ea5f25b"
+    },
+    {
+      "id": "v1.totp.rfc6238-sha512.001",
+      "category": "totp",
+      "kind": "bytes",
+      "normative": true,
+      "path": "cases/totp/v1.totp.rfc6238-sha512.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "40",
+        "56"
+      ],
+      "sha256": "c2787120d475f894371b490d37f5096fd255d6a36e385e20bf092bd7f148b07a"
     }
   ]
 }

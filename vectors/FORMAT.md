@@ -56,6 +56,17 @@ header, full 87-byte record, and local vault binding. Empty and Unicode password
 bytes are included. Salt/nonce/root values are fixed public fixture material.
 Tests additionally exercise malformed inputs and authentication failures.
 
+## TOTP known answers
+
+`totp` cases execute the [RFC 6238 Appendix B](https://www.rfc-editor.org/rfc/rfc6238.html#appendix-B)
+known answers, with the explicit 20/32/64-byte secrets used by Appendix A for
+SHA-1/SHA-256/SHA-512. Each case carries source/notes, raw secret hex, the section
+40 algorithm number, digits, period, `t0`, and six timestamp rows. Each row pins
+Unix seconds, the integer counter, its exact eight-byte big-endian hex encoding,
+and the zero-padded decimal code. The runner checks both counter derivation and
+actual code generation. These fixtures use `t0=0`, period 30, and eight digits.
+Expected codes are transcribed from the RFC, not computed by the generator.
+
 ## Graph steps
 
 Graph cases are compact, language-neutral symbolic models. IDs such as `a`, `b`,

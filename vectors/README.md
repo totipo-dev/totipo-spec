@@ -1,9 +1,9 @@
 # v1 Conformance Vectors
 
-The [manifest](manifest.json) lists 68 current v1/r9 cases, each with a permanent
+The [manifest](manifest.json) lists 71 current v1/r9 cases, each with a permanent
 ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
 outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
-The [case plan](CASE_PLAN.md) records the original stable IDs; all are represented.
+The manifest is the live case contract; all original planned IDs are represented.
 
 Run `make conformance` to execute the corpus, or `make verify` to validate JSON
 contracts, file checksums, and the moving requirements profile. Neither command
@@ -17,3 +17,6 @@ parses only their frozen routing metadata.
 
 These cases are moving pre-RC evidence. Passing them does not establish full
 application conformance, independent interoperability, or production readiness.
+
+The TOTP category contains three RFC 6238 algorithm cases, each with six standard
+timestamp rows and explicit secret/counter/code values. See [FORMAT.md](FORMAT.md).
