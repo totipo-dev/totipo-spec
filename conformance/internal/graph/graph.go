@@ -38,6 +38,7 @@ type Value struct {
 	Provenance  string `json:"provenance,omitempty"`
 }
 type State struct {
+	OpaqueRecords       map[string]OpaqueUnscopedRecord
 	Nodes               map[string]Node
 	Available           map[string]Value
 	ContinuityUnknown   bool
@@ -46,7 +47,9 @@ type State struct {
 	replacement         *State
 }
 
-func New() *State { return &State{Nodes: map[string]Node{}, Available: map[string]Value{}} }
+func New() *State {
+	return &State{Nodes: map[string]Node{}, Available: map[string]Value{}, OpaqueRecords: map[string]OpaqueUnscopedRecord{}}
+}
 func clone(n Node) Node {
 	n.Parents = append([]string(nil), n.Parents...)
 	sort.Strings(n.Parents)
@@ -84,7 +87,8 @@ func (s *State) RemoteUnavailable(id string, trustedCopy bool) {
 
 func (s *State) CorruptSecurityMemory() { s.ContinuityUnknown = true }
 
-// BeginReset represents explicit user confirmation of lost continuity guarantees.
+// BeginReset represents explicit confirmation after warning that lost ancestry
+// can make historical assertions current/conflicting without making them newer.
 // The old epoch remains intact until a complete, successfully persisted scan.
 func (s *State) BeginReset() {
 	s.ContinuityUnknown = true
@@ -97,16 +101,23 @@ func (s *State) BaselineLearn(n Node, v *Value, persist bool) error {
 	return s.replacement.Learn(n, v, persist)
 }
 func (s *State) FinishReset(complete bool) bool {
-	if s.replacement == nil || !complete || !s.replacement.BaseSafe() {
+	if s.replacement == nil || !complete || !s.replacement.BaseSafe() || s.replacement.DiscoveryIncomplete {
 		return false
 	}
 	*s = *s.replacement
 	return true
 }
 
-// Reclassify models compatible reprocessing of the exact authenticated object;
-// Digest represents its immutable semantic bytes, not its old interpretation.
+// Reclassify is the symbolic r12 topology operation. Concrete retained records
+// must pass through ReprocessOpaque, which consumes their authenticated bytes.
 func (s *State) Reclassify(n Node, v *Value, persist bool) error {
+	if _, concrete := s.OpaqueRecords[n.ID]; concrete {
+		return errors.New("use retained-byte reprocessing")
+	}
+	return s.reclassify(n, v, persist)
+}
+
+func (s *State) reclassify(n Node, v *Value, persist bool) error {
 	old, ok := s.Nodes[n.ID]
 	if !ok || old.Class != "OPAQUE_UNSCOPED" || old.Digest == "" || old.Digest != n.Digest ||
 		(n.Class != "SUPPORTED_VALID" && n.Class != "OPAQUE_ROUTABLE") {

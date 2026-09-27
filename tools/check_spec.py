@@ -10,7 +10,7 @@ assert [int(n) for n in re.findall(r"^## (\d+)\.", s, re.M)] == list(range(1, 59
 for heading in [
     "## 54. Core invariants",
     "## 55. Required conformance evidence for v1",
-    "## 56. Open work after r12",
+    "## 56. Open work after r13",
     "## 57. v0 concepts intentionally absent from v1",
 ]:
     assert heading in norm, heading
@@ -39,6 +39,7 @@ assert "Migration creates a new v1 vault" not in norm
 
 assert re.search(r"^### v1/r12$", s.split("## 58. Revision history", 1)[1], re.M)
 
+assert re.search(r"^### v1/r13$", s.split("## 58. Revision history", 1)[1], re.M)
 assert "### v1/r11" in s
 
 # Presence checks deliberately do not interpret prose as executable rules.
@@ -55,9 +56,25 @@ for concept in [
 ]:
     assert re.search(concept, norm, re.S), concept
 
+# r13 concepts: bounded by normative sections, tolerant of editorial phrasing.
+for concept in [
+    r"OPAQUE_UNSCOPED_RECORD.*?OBJECT_ID.*?EXACT_OBJECT_BYTES\[1024\]",
+    r"exact encrypted 1024-byte object is required.*?later compatible implementation",
+    r"exact authenticated object cannot be durably retained.*?KNOWLEDGE_PERSISTENCE_BLOCKED",
+    r"resource-complete.*?every candidate.*?terminal classification.*?no configured.*?left unclassified",
+    r"required bytes are unavailable.*?resource limit is exhausted.*?prevents.*?resource-complete",
+    r"explicitly warn.*?historical.*?re-enter.*?current frontier.*?conflicts",
+    r"reset does not prove.*?semantically newer",
+    r"public-key material.*?newly available.*?MUST recompute provenance.*?known TOKEN",
+    r"Provenance re-evaluation MUST NOT change.*?TOKEN_VALUE.*?causal ancestry/current-head.*?credential authority",
+    r"TOKEN-before-DEVICE publication ordering is allowed.*?success is withheld.*?both are durable",
+    r"illustrative TOKEN state.*?reserved-size calculation.*?four parents",
+]:
+    assert re.search(concept, norm, re.S), concept
+
 required = [
-    "**Revision:** r12",
-    "**Revision 12 summary:**",
+    "**Revision:** r13",
+    "**Revision 13 summary:**",
     "objects-v1/",
     "Every valid object in objects-v1/ is exactly 1024 bytes.",
     "OBJECT_VERSION versions semantics inside the v1 envelope family",
@@ -91,4 +108,4 @@ for x in [
 
 assert norm.count("| `0x0200` | `DEVICE_ID` |") == 1
 assert "Unrelated tokens continue normal ordinary use and authorship" in norm
-print("PASS: Totipo v1/r12 structural spec checks")
+print("PASS: Totipo v1/r13 structural spec checks")

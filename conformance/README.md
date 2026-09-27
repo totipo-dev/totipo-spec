@@ -1,7 +1,7 @@
 # Go v1 reference/conformance consumer
 
 This module supports Go 1.23 or later and is the single in-repository reference
-consumer for Totipo v1/r12. It is deliberately not a production client.
+consumer for Totipo v1/r13. It is deliberately not a production client.
 
 From the repository root:
 
@@ -67,3 +67,17 @@ corruption blocks all use. Opaque-unscoped disappearance does not clear evidence
 Explicit reset builds a complete replacement baseline and deliberately abandons
 prior continuity guarantees. A separate small publication workflow checks the
 first DEVICE advertisement gate; it is not a production publication system.
+
+The r13 concrete storage path retains `OBJECT_ID` and the exact authenticated
+1024-byte encrypted object for unscoped evidence. `LearnOpaque` authenticates
+before insertion; `ReprocessOpaque` reauthenticates retained bytes before invoking
+a compatible classifier. Existing symbolic graph cases keep their abstraction;
+they alone do not prove byte retention. Reprocessing cannot bypass this boundary
+with a digest-only reclassification of a concrete retained record.
+
+`graph.Provenance` retains known TOKEN semantic evidence and recomputes attribution
+when matching DEVICE/restored public-key material arrives. It updates provenance
+without altering TOKEN values, topology, or authority. The baseline scan model
+requires terminal classifications for every member of a fixed snapshot. Explicit
+reset can discard missing intermediate ancestry and expose historical assertions
+as current conflicts; a live UI must warn before asking for confirmation.

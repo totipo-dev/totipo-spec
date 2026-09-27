@@ -2,11 +2,11 @@
   "format": "totipo-requirements-v1",
   "status": "moving-pre-rc",
   "protocol": "totipo-v1",
-  "spec_revision": "r12",
-  "manifest_sha256": "7bbc4e3b645246f0bfa51648097d4954f263a5aa9cb11b2d09b36575d1ae3c2e",
-  "spec_sha256": "2c601766845315f5a8c2122c80eb76bf882a9bcdc59edfedd3b86ce6b74fc7f6",
+  "spec_revision": "r13",
+  "manifest_sha256": "da289e75ccb2a8d73080cb8cc6ebcc2a6d39623edf2bfcbccce84b6b67dba8bd",
+  "spec_sha256": "513426313c7850b998239ed19a3d7399b32de203994931ae2d873516717ae228",
   "schema_sha256": "59bdc9165b1c7e940031c447c2da640185774a6e4fd52fa0fee0b245061e0440",
-  "case_schema_sha256": "80dabe4daa997c6dc154339e5b16c5b8c6dc928b9f4eaf239a12f2eab2cc8a25",
+  "case_schema_sha256": "79e33b68bf948dcc332075827b791c8eb8e54d9cb27634dd59c0c6ac1fd95fd5",
   "required_cases": [
     {
       "id": "v1.routing.token-v1.001",
@@ -347,6 +347,26 @@
     {
       "id": "v1.provenance.signature-context-cross-vault.001",
       "sha256": "df926d8526bd26b08ded0517fb19bb555aad80e1295daecc1fa4c4bce3d39f54"
+    },
+    {
+      "id": "v1.future.unscoped-retains-exact-object.001",
+      "sha256": "f2682f95f83a7b486f4abdaa39f0231f9a803e641ba9f237e91893d446a68a74"
+    },
+    {
+      "id": "v1.future.unscoped-reprocess-retained.001",
+      "sha256": "e1b7fd2e68ec41d945ade8ece4121ae080024d3b1fdfb15fe017093475b834c0"
+    },
+    {
+      "id": "v1.provenance.late-device-reclassify.001",
+      "sha256": "9bb0148a2066440188f82e286c1b97ce8b52e58154606b3059c4a32ff5428a99"
+    },
+    {
+      "id": "v1.graph.rebaseline-history-reappears.001",
+      "sha256": "6cc00307356a66787543f4aee5a31800fcac6efc70a58f0a674e87bbda32ffc9"
+    },
+    {
+      "id": "v1.graph.rebaseline-resource-incomplete.001",
+      "sha256": "a3ed80732e26da31cd42cc7b69312745213524f11551c6f0a33982cf6f4d7943"
     }
   ]
 }

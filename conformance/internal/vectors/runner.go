@@ -63,7 +63,7 @@ func Read(root string) (Manifest, []Case, error) {
 	if e = Decode(b, &m); e != nil {
 		return m, nil, e
 	}
-	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r12" || len(m.Cases) == 0 {
+	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r13" || len(m.Cases) == 0 {
 		return m, nil, fmt.Errorf("invalid manifest header or empty corpus")
 	}
 	seen, paths := map[string]bool{}, map[string]bool{}
@@ -118,12 +118,37 @@ func Read(root string) (Manifest, []Case, error) {
 		paths[entry.Path] = true
 		cases = append(cases, c)
 	}
+	if e := resolveRecovery(cases); e != nil {
+		return m, nil, e
+	}
 	if e := resolveStorage(cases); e != nil {
 		return m, nil, e
 	}
 	return m, cases, nil
 }
 func ValidateShape(c Case, kind string) error {
+	if c.Operation == "opaque-retention" || c.Operation == "late-provenance" {
+		if kind != "semantic" || c.Expected != "PASS" || c.Context != nil || c.Publication != nil || c.Input != nil || c.Crypto != nil || c.Graph != nil || c.Storage != nil || c.TOTP != nil || c.Size != nil || c.Bootstrap != nil || c.Future != nil || c.Root != "" || c.Semantic != "" || c.PublicKey != "" {
+			return fmt.Errorf("mixed recovery payload")
+		}
+		if c.Operation == "opaque-retention" {
+			if c.Retention == nil || c.LateProvenance != nil || c.Retention.Fixture == "" || c.Retention.Notes == "" || len(c.Retention.Trials) == 0 {
+				return fmt.Errorf("invalid retention payload")
+			}
+			for _, t := range c.Retention.Trials {
+				if t.Reclassify != "" && (t.Reclassify != object.Supported && t.Reclassify != object.Opaque || !t.Persist) {
+					return fmt.Errorf("invalid compatible classification")
+				}
+			}
+		} else if c.LateProvenance == nil || c.Retention != nil || c.LateProvenance.Fixture == "" || c.LateProvenance.Notes == "" || len(c.LateProvenance.Trials) == 0 {
+			return fmt.Errorf("invalid late provenance payload")
+		}
+		return nil
+	}
+	if c.Retention != nil || c.LateProvenance != nil {
+		return fmt.Errorf("unexpected recovery payload")
+	}
+
 	if c.Operation == "signature-context" || c.Operation == "publication" {
 		if c.Expected != "PASS" || c.Crypto != nil || c.Graph != nil || c.Storage != nil || c.TOTP != nil || c.Size != nil || c.Bootstrap != nil || c.Future != nil || c.Root != "" || c.Semantic != "" {
 			return fmt.Errorf("mixed hardening payload")
@@ -193,7 +218,7 @@ func VerifyProfile(root string, m Manifest) error {
 	if e = Decode(b, &p); e != nil {
 		return e
 	}
-	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r12" || len(p.Required) != len(m.Cases) {
+	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r13" || len(p.Required) != len(m.Cases) {
 		return fmt.Errorf("invalid moving profile")
 	}
 	for file, want := range map[string]string{"vectors/manifest.json": p.ManifestSHA256, "spec/totipo-vault-format-v1.md": p.SpecSHA256, "vectors/manifest.schema.json": p.SchemaSHA256, "vectors/case.schema.json": p.CaseSchemaSHA256} {
@@ -287,6 +312,10 @@ func Run(c Case) error {
 		return nil
 	case "bootstrap":
 		return runBootstrap(c)
+	case "opaque-retention":
+		return runRetention(c)
+	case "late-provenance":
+		return runLateProvenance(c)
 	case "graph":
 		return runGraph(c)
 	}
@@ -473,6 +502,15 @@ func runGraph(c Case) error {
 				return fmt.Errorf("missing baseline node")
 			}
 			e = s.BaselineLearn(*step.Node, step.Value, !step.Flag)
+		case "reset-complete-scan":
+			if step.Scan == nil || step.Success == nil {
+				return fmt.Errorf("missing scan expectations")
+			}
+			complete := graph.ResourceComplete(step.Scan)
+			if complete != step.Flag || s.FinishReset(complete) != *step.Success {
+				return fmt.Errorf("resource-complete baseline mismatch")
+			}
+			checks++
 		case "reset-complete":
 			if step.Success == nil || s.FinishReset(step.Flag) != *step.Success {
 				return fmt.Errorf("reset result mismatch")

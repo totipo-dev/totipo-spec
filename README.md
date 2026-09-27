@@ -9,7 +9,7 @@ Totipo is an encrypted, append-only, multi-device TOTP vault format designed for
 The current specification is:
 
 - **Totipo Vault Format v1**
-- design revision **r12**
+- design revision **r13**
 - moving pre-release-candidate conformance evidence
 
 The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
@@ -78,12 +78,13 @@ build cache under `.direnv/` for the jailed development environment. When runnin
 Go directly there, set `GOCACHE="$PWD/.direnv/go-build"` from the repository root.
 The module tests run with `go -C conformance test ./...`.
 
-The [manifest](vectors/manifest.json) currently contains 85 cases. The
+The [manifest](vectors/manifest.json) currently contains 90 cases. The
 [moving pre-RC profile](requirements/v1-pre-rc.json) pins their IDs and hashes;
 it is not a release or a frozen RC profile. Normal checks never regenerate cases.
 
 See the [vector contract](vectors/FORMAT.md), [Go consumer](conformance/README.md),
-and [r12 hardening report](review/V1_R12_HARDENING_REPORT.md).
+[r12 hardening report](review/V1_R12_HARDENING_REPORT.md),
+and [r13 hardening report](review/V1_R13_HARDENING_REPORT.md).
 
 ## Current next step
 

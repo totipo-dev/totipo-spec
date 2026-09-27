@@ -29,7 +29,9 @@
         "totp",
         "storage",
         "signature-context",
-        "publication"
+        "publication",
+        "opaque-retention",
+        "late-provenance"
       ]
     },
     "expected": {
@@ -317,7 +319,8 @@
                   "reset-complete",
                   "reclassify",
                   "rename",
-                  "state-query"
+                  "state-query",
+                  "reset-complete-scan"
                 ]
               },
               "node": {
@@ -566,6 +569,36 @@
                   "authoritative",
                   "continuity_unknown"
                 ]
+              },
+              "scan": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "classification": {
+                      "enum": [
+                        "SUPPORTED_VALID",
+                        "OPAQUE_ROUTABLE",
+                        "OPAQUE_UNSCOPED",
+                        "INVALID",
+                        "INVALID_STORAGE",
+                        "UNCLASSIFIED",
+                        "RESOURCE_EXHAUSTED",
+                        "BYTES_UNAVAILABLE"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "classification"
+                  ]
+                }
               }
             },
             "required": [
@@ -617,10 +650,30 @@
                     "id"
                   ]
                 }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "action": {
+                      "const": "reset-complete-scan"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "scan",
+                    "flag",
+                    "success"
+                  ]
+                }
               }
             ]
           },
           "minItems": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
@@ -1054,6 +1107,130 @@
         "public_key",
         "events"
       ]
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fixture_case": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trials": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "persist": {
+                "type": "boolean"
+              },
+              "reclassify": {
+                "enum": [
+                  "SUPPORTED_VALID",
+                  "OPAQUE_ROUTABLE"
+                ]
+              },
+              "reclassify_persist": {
+                "type": "boolean"
+              },
+              "expect": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "retained_exact": {
+                    "type": "boolean"
+                  },
+                  "persistence_blocked": {
+                    "type": "boolean"
+                  },
+                  "authoritative": {
+                    "type": "boolean"
+                  },
+                  "class": {
+                    "enum": [
+                      "",
+                      "OPAQUE_UNSCOPED",
+                      "SUPPORTED_VALID",
+                      "OPAQUE_ROUTABLE"
+                    ]
+                  }
+                },
+                "required": [
+                  "retained_exact",
+                  "persistence_blocked",
+                  "authoritative",
+                  "class"
+                ]
+              }
+            },
+            "required": [
+              "persist",
+              "expect"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fixture_case",
+        "notes",
+        "trials"
+      ]
+    },
+    "late_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fixture_case": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trials": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "corrupt_signature": {
+                "type": "boolean"
+              },
+              "before": {
+                "const": "UNRESOLVED"
+              },
+              "after": {
+                "enum": [
+                  "VERIFIED",
+                  "REJECTED"
+                ]
+              },
+              "semantic_unchanged": {
+                "const": true
+              }
+            },
+            "required": [
+              "corrupt_signature",
+              "before",
+              "after",
+              "semantic_unchanged"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fixture_case",
+        "notes",
+        "trials"
+      ]
     }
   },
   "allOf": [
@@ -1203,6 +1380,34 @@
       "then": {
         "required": [
           "publication"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "opaque-retention"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "retention"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "late-provenance"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "late_provenance"
         ]
       }
     }

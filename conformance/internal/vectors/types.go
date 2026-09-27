@@ -80,24 +80,26 @@ type StorageCase struct {
 	Want          StorageExpected `json:"expect"`
 }
 type Case struct {
-	Context     *SignatureContextCase `json:"signature_context,omitempty"`
-	Publication *PublicationCase      `json:"publication,omitempty"`
-	Storage     *StorageCase          `json:"storage,omitempty"`
-	fixtures    map[string]Case
-	TOTP        *TOTP          `json:"totp,omitempty"`
-	Format      string         `json:"format"`
-	ID          string         `json:"id"`
-	Operation   string         `json:"operation"`
-	Expected    string         `json:"expected"`
-	Input       *object.Object `json:"input,omitempty"`
-	Semantic    string         `json:"semantic_hex,omitempty"`
-	Root        string         `json:"root_hex,omitempty"`
-	PublicKey   string         `json:"public_key_hex,omitempty"`
-	Crypto      *Crypto        `json:"crypto,omitempty"`
-	Future      *Future        `json:"future,omitempty"`
-	Size        *Size          `json:"size,omitempty"`
-	Bootstrap   *Bootstrap     `json:"bootstrap,omitempty"`
-	Graph       *GraphCase     `json:"graph,omitempty"`
+	Retention      *RetentionCase        `json:"retention,omitempty"`
+	LateProvenance *LateProvenanceCase   `json:"late_provenance,omitempty"`
+	Context        *SignatureContextCase `json:"signature_context,omitempty"`
+	Publication    *PublicationCase      `json:"publication,omitempty"`
+	Storage        *StorageCase          `json:"storage,omitempty"`
+	fixtures       map[string]Case
+	TOTP           *TOTP          `json:"totp,omitempty"`
+	Format         string         `json:"format"`
+	ID             string         `json:"id"`
+	Operation      string         `json:"operation"`
+	Expected       string         `json:"expected"`
+	Input          *object.Object `json:"input,omitempty"`
+	Semantic       string         `json:"semantic_hex,omitempty"`
+	Root           string         `json:"root_hex,omitempty"`
+	PublicKey      string         `json:"public_key_hex,omitempty"`
+	Crypto         *Crypto        `json:"crypto,omitempty"`
+	Future         *Future        `json:"future,omitempty"`
+	Size           *Size          `json:"size,omitempty"`
+	Bootstrap      *Bootstrap     `json:"bootstrap,omitempty"`
+	Graph          *GraphCase     `json:"graph,omitempty"`
 }
 type Future struct {
 	Routing object.Routing `json:"routing"`
@@ -138,6 +140,7 @@ type Bootstrap struct {
 	Binding  string `json:"binding_hex"`
 }
 type GraphCase struct {
+	Notes string `json:"notes,omitempty"`
 	Steps []Step `json:"steps"`
 }
 type Query struct {
@@ -146,17 +149,18 @@ type Query struct {
 	Device    string `json:"device,omitempty"`
 }
 type Step struct {
-	StateWant      *StateExpected `json:"state_expect,omitempty"`
-	Success        *bool          `json:"success,omitempty"`
-	Reason         string         `json:"reason,omitempty"`
-	Action         string         `json:"action"`
-	Node           *graph.Node    `json:"node,omitempty"`
-	Value          *graph.Value   `json:"value,omitempty"`
-	ID             string         `json:"id,omitempty"`
-	Flag           bool           `json:"flag,omitempty"`
-	Query          *Query         `json:"query,omitempty"`
-	Want           *graph.Result  `json:"expect,omitempty"`
-	IntegrityError bool           `json:"integrity_error,omitempty"`
+	Scan           []graph.ScanCandidate `json:"scan,omitempty"`
+	StateWant      *StateExpected        `json:"state_expect,omitempty"`
+	Success        *bool                 `json:"success,omitempty"`
+	Reason         string                `json:"reason,omitempty"`
+	Action         string                `json:"action"`
+	Node           *graph.Node           `json:"node,omitempty"`
+	Value          *graph.Value          `json:"value,omitempty"`
+	ID             string                `json:"id,omitempty"`
+	Flag           bool                  `json:"flag,omitempty"`
+	Query          *Query                `json:"query,omitempty"`
+	Want           *graph.Result         `json:"expect,omitempty"`
+	IntegrityError bool                  `json:"integrity_error,omitempty"`
 }
 
 // StateExpected exposes durable topology separately from presentation and values.

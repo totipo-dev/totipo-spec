@@ -80,3 +80,42 @@ func TestStorageReferencesAndExpectations(t *testing.T) {
 	}
 	t.Fatal("missing compatibility case")
 }
+
+func TestRecoveryReferencesAndExpectations(t *testing.T) {
+	_, cases, err := Read(filepath.Join("..", "..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	checks := 0
+	for i, c := range cases {
+		if c.Retention != nil {
+			x := *c.Retention
+			x.Trials = append([]RetentionTrial(nil), x.Trials...)
+			x.Trials[0].Want.RetainedExact = false
+			c.Retention = &x
+			if Run(c) == nil {
+				t.Fatal("wrong exact-byte retention expectation accepted")
+			}
+			altered := append([]Case(nil), cases...)
+			x.Fixture = "v1.missing.fixture.001"
+			altered[i].Retention = &x
+			if resolveRecovery(altered) == nil {
+				t.Fatal("unresolved recovery fixture accepted")
+			}
+			checks++
+		}
+		if c.LateProvenance != nil {
+			x := *c.LateProvenance
+			x.Trials = append([]ProvenanceTrial(nil), x.Trials...)
+			x.Trials[0].After = "REJECTED"
+			c.LateProvenance = &x
+			if Run(c) == nil {
+				t.Fatal("incorrect late provenance expectation accepted")
+			}
+			checks++
+		}
+	}
+	if checks != 3 {
+		t.Fatalf("missing recovery coverage: %d", checks)
+	}
+}

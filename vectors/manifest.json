@@ -1,7 +1,7 @@
 {
   "format": "totipo-vector-manifest-v1",
   "protocol": "totipo-v1",
-  "spec_revision": "r12",
+  "spec_revision": "r13",
   "cases": [
     {
       "id": "v1.routing.token-v1.001",
@@ -1126,6 +1126,73 @@
         "19"
       ],
       "sha256": "df926d8526bd26b08ded0517fb19bb555aad80e1295daecc1fa4c4bce3d39f54"
+    },
+    {
+      "id": "v1.future.unscoped-retains-exact-object.001",
+      "category": "future",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/future/v1.future.unscoped-retains-exact-object.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "24",
+        "24.1",
+        "24.7",
+        "34"
+      ],
+      "sha256": "f2682f95f83a7b486f4abdaa39f0231f9a803e641ba9f237e91893d446a68a74"
+    },
+    {
+      "id": "v1.future.unscoped-reprocess-retained.001",
+      "category": "future",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/future/v1.future.unscoped-reprocess-retained.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "24.2",
+        "37.3"
+      ],
+      "sha256": "e1b7fd2e68ec41d945ade8ece4121ae080024d3b1fdfb15fe017093475b834c0"
+    },
+    {
+      "id": "v1.provenance.late-device-reclassify.001",
+      "category": "provenance",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/provenance/v1.provenance.late-device-reclassify.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "16.1",
+        "55"
+      ],
+      "sha256": "9bb0148a2066440188f82e286c1b97ce8b52e58154606b3059c4a32ff5428a99"
+    },
+    {
+      "id": "v1.graph.rebaseline-history-reappears.001",
+      "category": "graph",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/graph/v1.graph.rebaseline-history-reappears.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "34.3",
+        "34.4"
+      ],
+      "sha256": "6cc00307356a66787543f4aee5a31800fcac6efc70a58f0a674e87bbda32ffc9"
+    },
+    {
+      "id": "v1.graph.rebaseline-resource-incomplete.001",
+      "category": "graph",
+      "kind": "semantic",
+      "normative": true,
+      "path": "cases/graph/v1.graph.rebaseline-resource-incomplete.001.json",
+      "expected": "PASS",
+      "spec_sections": [
+        "24.3",
+        "34.3"
+      ],
+      "sha256": "a3ed80732e26da31cd42cc7b69312745213524f11551c6f0a33982cf6f4d7943"
     }
   ]
 }

@@ -216,3 +216,34 @@ Trusted native randomized ECDSA remains valid; no custom nonce generator is adde
 
 The fixture generator carries these eight hand-authored r12 files forward without
 rewriting them. Their expected results are independent of the state evaluator.
+
+## r13 recovery/provenance workflows
+
+Five hand-authored cases extend the unchanged 85-case r12 corpus. The generator
+carries these files forward without deriving their expectations from the model.
+
+`opaque-retention` references an existing hash-verified authenticated unscoped
+envelope by `fixture_case`. Each trial begins with fresh state. `persist` controls
+exact-object persistence; the synchronized bytes are replaced and removed.
+`retained_exact` compares all 1024 retained encrypted bytes with the fixture.
+Optional `reclassify` and `reclassify_persist` run a controlled synthetic compatible
+classifier on reauthenticated retained bytes and test durable reclassification.
+This test classifier recognizes only the supplied synthetic fixture; it allocates
+no new wire format or OBJECT_VERSION. Expectations include the final class,
+persistence gate and authoritative gate. A failed persistence trial is included
+in the retention case; no redundant standalone persistence case is added.
+
+`late-provenance` references the existing fixed signed TOKEN child fixture. Each
+trial tracks the TOKEN without its key, then supplies matching public-key material
+as from a DEVICE advertisement or restored record. `corrupt_signature` flips the
+last signature byte in memory for the rejected transition; committed crypto bytes
+are unchanged. `before`, `after`, and `semantic_unchanged` assert provenance and
+invariance of TOKEN values, validity, graph/ancestry, heads, and credential gates.
+
+Graph cases may include explanatory `notes`. `reset-complete-scan` takes a fixed
+`scan` snapshot of candidate IDs and classifications. `flag` is the expected
+resource-complete result, not an input override; `success` is the expected baseline
+completion. Supported, opaque and invalid classifications are terminal;
+UNCLASSIFIED, RESOURCE_EXHAUSTED and BYTES_UNAVAILABLE are not. No concrete resource
+limits are implied. A historical-frontier case drops a missing intermediate from
+the new epoch, preserving the assertions while recomputing heads/conflicts.

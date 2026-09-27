@@ -114,6 +114,12 @@ func runStorage(c Case) error {
 				value = &graph.Value{Status: status, Issuer: o.Issuer, Account: o.Account, Algorithm: o.Algorithm, Digits: o.Digits, Period: o.Period, Secret: hex.EncodeToString(o.Secret), DisplayName: o.DisplayName, Verified: o.Type == object.Device && keys.Provenance(*o, nil) == "VERIFIED"}
 			}
 		}
+		if obs.Class == object.Unscoped {
+			if e := state.LearnOpaque(id, obs.ExactObject, keys, true); e != nil {
+				return e
+			}
+			continue
+		}
 		if e := state.Learn(n, value, true); e != nil {
 			return e
 		}

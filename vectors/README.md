@@ -1,6 +1,6 @@
 # v1 Conformance Vectors
 
-The [manifest](manifest.json) lists 85 current v1/r12 cases, each with a permanent
+The [manifest](manifest.json) lists 90 current v1/r13 cases, each with a permanent
 ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
 outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
 The manifest is the live case contract; all original planned IDs are represented.
@@ -30,3 +30,9 @@ Eight r12 cases cover sticky opaque-unscoped evidence and deliberate continuity
 reset, DEVICE convergence across rejected/unresolved heads, remote versus local
 corruption, initial DEVICE publication, and signature-context vault binding.
 The original 77 case files remain byte-identical.
+
+Five r13 cases add exact opaque-object retention (including persistence failure),
+retained-byte compatible reprocessing, reset frontier changes, late provenance
+recomputation, and resource-incomplete baseline scans. All 85 r12 case files and
+manifest entries remain unchanged. The existing publication case already checks
+both allowed orders and premature success.

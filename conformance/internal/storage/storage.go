@@ -4,6 +4,7 @@
 package storage
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 	"totipo/conformance/internal/cryptov1"
@@ -21,6 +22,7 @@ type Entry struct {
 }
 type Observation struct {
 	Path, Class string
+	ExactObject []byte
 	Semantic    []byte
 	Object      *object.Object
 }
@@ -71,6 +73,9 @@ func Scan(familyKind string, entries []Entry, k cryptov1.Keys) ([]Observation, e
 			if e == nil {
 				obs.Class, obs.Object = object.Dispatch(p)
 				obs.Semantic = p
+				if obs.Class == object.Unscoped {
+					obs.ExactObject = bytes.Clone(b)
+				}
 			}
 		}
 		out = append(out, obs)
