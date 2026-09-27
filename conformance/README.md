@@ -35,8 +35,7 @@ confirmation; it is not a complete writer or a confirmation bypass.
 
 Fixture generation is a separate command described in [FORMAT.md](../vectors/FORMAT.md).
 Tests never invoke it. The moving corpus needs an independent live implementation
-before RC freeze. See the [implementation report](../review/V1_VECTOR_IMPLEMENTATION_REPORT.md)
-for exact coverage and limitations.
+before RC freeze.
 
 ## Storage-family environment model
 
@@ -58,7 +57,9 @@ an illustrative separate family and is ignored. Rolling compatibility requires
 authenticated compatibility assertions in `objects-v1/`; unknown sibling namespace
 names are not authenticated future-version evidence. Storage cases reuse existing
 envelope fixtures, authenticate them, and feed only supported/opaque authenticated
-observations into the same graph evaluator. See the [r10 report](../review/V1_R10_INTEGRATION_REPORT.md).
+observations into the same graph evaluator. See the
+[envelope-family review](../review/V1_R10_ENVELOPE_FAMILY_REVIEW.md) for the namespace
+and compatibility rationale.
 
 The r12 model keeps DEVICE causality separate from authenticated friendly names:
 rename includes all supported heads, while only verified readable heads provide
