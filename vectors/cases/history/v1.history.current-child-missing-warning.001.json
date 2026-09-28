@@ -1,6 +1,6 @@
 {
   "format": "totipo-case-v1",
-  "id": "v1.candidate.persistence-block.001",
+  "id": "v1.history.current-child-missing-warning.001",
   "operation": "graph",
   "expected": "PASS",
   "graph": {
@@ -28,7 +28,7 @@
         }
       },
       {
-        "action": "persist-fails",
+        "action": "learn",
         "node": {
           "id": "b",
           "version": 1,
@@ -52,6 +52,13 @@
         }
       },
       {
+        "action": "remember"
+      },
+      {
+        "action": "disappear",
+        "id": "b"
+      },
+      {
         "action": "query",
         "query": {
           "identity": "T",
@@ -62,13 +69,17 @@
             "a"
           ],
           "value_state": "UNAMBIGUOUS",
-          "ordinary": false,
-          "author": false,
-          "candidate": false,
-          "candidate_warning": false,
-          "integrity_failure": false
+          "ordinary": true,
+          "author": true,
+          "candidate": true,
+          "candidate_warning": true,
+          "integrity_failure": false,
+          "warnings": [
+            "HISTORY_REGRESSION"
+          ]
         }
       }
-    ]
+    ],
+    "notes": "Remembered child absence warns while the accepted ancestor is current and usable without mandatory confirmation."
   }
 }

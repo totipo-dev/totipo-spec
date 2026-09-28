@@ -1,86 +1,49 @@
-# Go v1 reference/conformance consumer
+# Go v1/r15 reference/conformance consumer
 
-This module supports Go 1.23 or later and is the single in-repository reference
-consumer for Totipo v1/r14. It is deliberately not a production client.
+This Go 1.23+ module is the single in-repository reference consumer, not a production
+client. Run `make check`, `make race`, and `make fuzz` from the repository root.
+The CLI also accepts `-root /path/to/repository` and `-verify-only`.
 
-From the repository root:
+`make conformance` executes the 93 baseline requirements with advisory history
+support disabled. `make conformance-all` executes baseline plus the 12 conditional
+cases using the reference model's explicit `ReferenceCapabilities` declaration.
+For example, `go run ./conformance/cmd/totipo-conformance -root . -capability advisory-history`
+reports baseline and `capability=advisory-history` results separately. Unknown
+capability names reject. The complete manifest has 105 schema-valid, hash-pinned
+cases; `make check` tests both selections. Downstream implementations without an
+advisory-history feature need only baseline; they need not retain cross-run graph
+history or emit HISTORY_MEMORY_LOST merely because no feature exists. Capability
+selection is a conformance concept, not wire negotiation.
 
-```sh
-make test
-make conformance
-make verify
-make race
-make fuzz
-```
+Packages separate unchanged TLV, crypto, object parsing, and TOTP from snapshot
+graph interpretation and vector IO. External bytes pass `cryptov1.Keys.Open`
+before dispatch. Invalid supported bodies never become future/opaque evidence.
 
-The command also supports `-root /path/to/repository` and `-verify-only`. The
-module tests execute the manifest corpus, verify its moving profile, and add
-parser, crypto rejection, signing, and graph invariants. Bounded fuzzing covers
-semantic parsing, encrypted envelopes, and graph arrival/disappearance order.
+`graph.State` contains one explicitly supplied accepted observation. `Snapshot`
+copies planning evidence; `Plan` chooses exact parents from it. Later observations
+do not stale ordinary publication. Confirmed conflict decisions track exact TOKEN
+heads, complete values, desired value, and intent. TOKEN-relevant changes learned
+before publication require reconfirmation; unrelated events do not.
 
-Packages separate fixed TLV framing, semantic object parsing, cryptographic
-processing, RFC 6238 TOTP computation, durable graph semantics, and vector IO. `object.Dispatch` takes
-already authenticated semantic bytes. Storage consumers must first call
-`cryptov1.Keys.Open`, which authenticates the envelope, canonical padding, and
-keyed object ID. Supported malformed bodies are invalid; future bodies are
-never interpreted as v1.
+When the advisory-history capability is selected, remembered IDs only derive diagnostics and cannot add nodes/edges/values.
+Disappearance removes current evidence in a subsequent observation. `author` means
+ordinary authorship eligibility (including empty new-token state), while
+`requires_confirmation` identifies a visible supported conflict. Cache health,
+incomplete discovery, and unscoped evidence are warnings, not global gates.
 
-`graph.State` models an established client's persisted authenticated knowledge
-and independently tracked synchronized value availability. It is an in-memory
-semantic evaluator with symbolic object IDs. It models persistence failure and
-continuity gates, but does not implement storage flushes, crash recovery, pending
-vault establishment, operation freshness epochs, or publication transactions.
-Its author result means the frontier permits authoring after any required user
-confirmation; it is not a complete writer or a confirmation bypass.
+`internal/storage` evaluates exact namespace, filename, ordinary-file, bounded
+reader, and cryptographic obligations. It also models complete/no-overwrite local
+publication and binding establishment. These abstract API outcomes do not prove
+physical crash durability or hidden remote completeness. Go race testing remains
+useful for implementation data races, not synchronized transaction claims.
 
-Fixture generation is a separate command described in [FORMAT.md](../vectors/FORMAT.md).
-Tests never invoke it. The moving corpus needs an independent live implementation
-before RC freeze.
+The first DEVICE workflow requires matching valid self-signed advertisement and
+TOKEN publication acknowledgements. Optional caches are independent. Provenance
+re-evaluation changes attribution without changing TOKEN values or causality.
 
-## Storage-family environment model
-
-`internal/storage` evaluates an observed filesystem environment. It selects only
-direct regular-file children of `objects-v1/` with 64 lowercase hexadecimal names.
-It does not normalize traversal paths or follow symlink entries. Unknown siblings,
-nested paths and special files never invoke their content reader. Wrong-size or
-unauthenticated candidates are invalid storage observations and cannot add opaque
-semantic evidence. A read error or unsafe family directory is an error requiring
-incomplete discovery, not successful classification.
-
-This is a small reference environment evaluator, not a host-filesystem adapter.
-A live adapter must honor observed entry types, bound reads, confine protocol paths
-to the configured logical namespace, and handle read failures and ordinary churn
-conservatively. Stable no-follow facilities are recommended where readily available;
-hostile same-privilege syscall-race immunity is optional under r14. This model does
-not establish live crash/persistence guarantees, which still need separate evidence.
-
-`OBJECT_VERSION` versions semantics within the fixed v1 family. `objects-v2/` is
-an illustrative separate family and is ignored. Rolling compatibility requires
-authenticated compatibility assertions in `objects-v1/`; unknown sibling namespace
-names are not authenticated future-version evidence. Storage cases reuse existing
-envelope fixtures, authenticate them, and feed only supported/opaque authenticated
-observations into the same graph evaluator. See the
-[envelope-family review](../review/V1_R10_ENVELOPE_FAMILY_REVIEW.md) for the namespace
-and compatibility rationale.
-
-The r12 model keeps DEVICE causality separate from authenticated friendly names:
-rename includes all supported heads, while only verified readable heads provide
-names. Remote byte corruption retains durable nodes; local security-memory
-corruption blocks all use. Opaque-unscoped disappearance does not clear evidence.
-Explicit reset builds a complete replacement baseline and deliberately abandons
-prior continuity guarantees. A separate small publication workflow checks the
-first DEVICE advertisement gate; it is not a production publication system.
-
-The r13 concrete storage path retains `OBJECT_ID` and the exact authenticated
-1024-byte encrypted object for unscoped evidence. `LearnOpaque` authenticates
-before insertion; `ReprocessOpaque` reauthenticates retained bytes before invoking
-a compatible classifier. Existing symbolic graph cases keep their abstraction;
-they alone do not prove byte retention. Reprocessing cannot bypass this boundary
-with a digest-only reclassification of a concrete retained record.
-
-`graph.Provenance` retains known TOKEN semantic evidence and recomputes attribution
-when matching DEVICE/restored public-key material arrives. It updates provenance
-without altering TOKEN values, topology, or authority. The baseline scan model
-requires terminal classifications for every member of a fixed snapshot. Explicit
-reset can discard missing intermediate ancestry and expose historical assertions
-as current conflicts; a live UI must warn before asking for confirmation.
+Tests never regenerate crypto fixtures. The obsolete monolithic r14 generator was
+removed because it encoded the retired state model; fixed byte fixtures remain
+committed and independently pinned. See [FORMAT.md](../vectors/FORMAT.md) for the
+strict language-neutral contract and [r15 review](../review/V1_R15_STATE_MODEL_SIMPLIFICATION_REPORT.md)
+for every semantic delta. An independent live implementation is still required
+before RC freeze. No downstream implementation is modified here.

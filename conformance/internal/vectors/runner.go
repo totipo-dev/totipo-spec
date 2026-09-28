@@ -63,12 +63,15 @@ func Read(root string) (Manifest, []Case, error) {
 	if e = Decode(b, &m); e != nil {
 		return m, nil, e
 	}
-	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r14" || len(m.Cases) == 0 {
+	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r15" || len(m.Cases) == 0 {
 		return m, nil, fmt.Errorf("invalid manifest header or empty corpus")
 	}
 	seen, paths := map[string]bool{}, map[string]bool{}
 	cases := []Case{}
 	for _, entry := range m.Cases {
+		if err := entry.Applicability.Validate(); err != nil {
+			return m, nil, fmt.Errorf("%s: %w", entry.ID, err)
+		}
 		if !idPattern.MatchString(entry.ID) || seen[entry.ID] || paths[entry.Path] || entry.Category == "" || !entry.Normative || len(entry.Sections) == 0 || entry.Expected == "" || !hashPattern.MatchString(entry.SHA256) {
 			return m, nil, fmt.Errorf("invalid/duplicate manifest entry %q", entry.ID)
 		}
@@ -118,6 +121,26 @@ func Read(root string) (Manifest, []Case, error) {
 		paths[entry.Path] = true
 		cases = append(cases, c)
 	}
+	// Every physical case must be represented once; unlisted cases are not silently skipped.
+	if err := filepath.WalkDir(filepath.Join(root, "vectors/cases"), func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(filepath.Join(root, "vectors"), path)
+		if err != nil {
+			return err
+		}
+		if !paths[filepath.ToSlash(rel)] {
+			return fmt.Errorf("unlisted physical case %s", rel)
+		}
+		return nil
+	}); err != nil {
+		return m, nil, err
+	}
+
 	if e := resolveRecovery(cases); e != nil {
 		return m, nil, e
 	}
@@ -127,26 +150,24 @@ func Read(root string) (Manifest, []Case, error) {
 	return m, cases, nil
 }
 func ValidateShape(c Case, kind string) error {
-	if c.Operation == "opaque-retention" || c.Operation == "late-provenance" {
-		if kind != "semantic" || c.Expected != "PASS" || c.Context != nil || c.Publication != nil || c.Input != nil || c.Crypto != nil || c.Graph != nil || c.Storage != nil || c.TOTP != nil || c.Size != nil || c.Bootstrap != nil || c.Future != nil || c.Root != "" || c.Semantic != "" || c.PublicKey != "" {
-			return fmt.Errorf("mixed recovery payload")
+	if c.Operation == "local" {
+		if kind != "semantic" || c.Expected != "PASS" || c.Local == nil || len(c.Local.Trials) == 0 {
+			return fmt.Errorf("invalid local case")
 		}
-		if c.Operation == "opaque-retention" {
-			if c.Retention == nil || c.LateProvenance != nil || c.Retention.Fixture == "" || c.Retention.Notes == "" || len(c.Retention.Trials) == 0 {
-				return fmt.Errorf("invalid retention payload")
-			}
-			for _, t := range c.Retention.Trials {
-				if t.Reclassify != "" && (t.Reclassify != object.Supported && t.Reclassify != object.Opaque || !t.Persist) {
-					return fmt.Errorf("invalid compatible classification")
-				}
-			}
-		} else if c.LateProvenance == nil || c.Retention != nil || c.LateProvenance.Fixture == "" || c.LateProvenance.Notes == "" || len(c.LateProvenance.Trials) == 0 {
+		return nil
+	}
+	if c.Local != nil {
+		return fmt.Errorf("unexpected local payload")
+	}
+
+	if c.Operation == "late-provenance" {
+		if kind != "semantic" || c.Expected != "PASS" || c.LateProvenance == nil || c.LateProvenance.Fixture == "" || len(c.LateProvenance.Trials) == 0 {
 			return fmt.Errorf("invalid late provenance payload")
 		}
 		return nil
 	}
-	if c.Retention != nil || c.LateProvenance != nil {
-		return fmt.Errorf("unexpected recovery payload")
+	if c.LateProvenance != nil {
+		return fmt.Errorf("unexpected provenance payload")
 	}
 
 	if c.Operation == "signature-context" || c.Operation == "publication" {
@@ -218,7 +239,7 @@ func VerifyProfile(root string, m Manifest) error {
 	if e = Decode(b, &p); e != nil {
 		return e
 	}
-	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r14" || len(p.Required) != len(m.Cases) {
+	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r15" {
 		return fmt.Errorf("invalid moving profile")
 	}
 	for file, want := range map[string]string{"vectors/manifest.json": p.ManifestSHA256, "spec/totipo-vault-format-v1.md": p.SpecSHA256, "vectors/manifest.schema.json": p.SchemaSHA256, "vectors/case.schema.json": p.CaseSchemaSHA256} {
@@ -230,15 +251,37 @@ func VerifyProfile(root string, m Manifest) error {
 			return fmt.Errorf("profile checksum mismatch: %s", file)
 		}
 	}
-	for i, entry := range m.Cases {
-		if p.Required[i].ID != entry.ID || p.Required[i].SHA256 != entry.SHA256 {
-			return fmt.Errorf("profile case mismatch at %d", i)
+	baseline := map[string]string{}
+	for _, entry := range m.Cases {
+		if err := entry.Applicability.Validate(); err != nil {
+			return err
+		}
+		if entry.Applicability.Kind == "baseline" {
+			baseline[entry.ID] = entry.SHA256
 		}
 	}
+	if len(p.Required) != len(baseline) {
+		return fmt.Errorf("profile must contain exactly manifest baseline cases")
+	}
+	for _, pin := range p.Required {
+		want, ok := baseline[pin.ID]
+		if !ok || pin.SHA256 != want {
+			return fmt.Errorf("profile baseline case mismatch: %s", pin.ID)
+		}
+		delete(baseline, pin.ID)
+	}
+
 	return nil
 }
-func Run(c Case) error {
+func Run(c Case) error { return RunWithCapabilities(c, nil) }
+func RunWithCapabilities(c Case, capabilities []string) error {
+	if err := validateCapabilities(capabilities); err != nil {
+		return err
+	}
+
 	switch c.Operation {
+	case "local":
+		return runLocal(c)
 	case "signature-context":
 		return runSignatureContext(c)
 	case "publication":
@@ -312,12 +355,10 @@ func Run(c Case) error {
 		return nil
 	case "bootstrap":
 		return runBootstrap(c)
-	case "opaque-retention":
-		return runRetention(c)
 	case "late-provenance":
 		return runLateProvenance(c)
 	case "graph":
-		return runGraph(c)
+		return runGraph(c, len(capabilities) > 0)
 	}
 	return fmt.Errorf("unknown operation")
 }
@@ -473,17 +514,48 @@ func runBootstrap(c Case) error {
 	}
 	return nil
 }
-func runGraph(c Case) error {
+func runGraph(c Case, advisoryHistory bool) error {
 	s := graph.New()
+	var plan *graph.Plan
 	checks := 0
 	for i, step := range c.Graph.Steps {
 		var e error
 		switch step.Action {
-		case "learn", "persist-fails":
+		case "remember", "history-lost", "history-clear", "cache-write-fails":
+			if !advisoryHistory {
+				return fmt.Errorf("%s requires capability=advisory-history", step.Action)
+			}
+		}
+		switch step.Action {
+		case "plan":
+			if step.Node == nil || step.Value == nil || step.Success == nil {
+				return fmt.Errorf("missing plan inputs")
+			}
+			var err error
+			plan, err = s.Plan(*step.Node, *step.Value, step.Intent, step.Flag)
+			if (err == nil) != *step.Success {
+				return fmt.Errorf("step %d plan result", i)
+			}
+			if plan != nil && !reflect.DeepEqual(plan.Node.Parents, step.Parents) {
+				return fmt.Errorf("step %d parent choice: %v", i, plan.Node.Parents)
+			}
+			checks++
+		case "publish":
+			if plan == nil || step.Success == nil {
+				return fmt.Errorf("missing plan/publication expectation")
+			}
+			if plan.Publish(s, step.Flag) != *step.Success {
+				return fmt.Errorf("step %d publication result", i)
+			}
+			checks++
+		case "learn", "cache-write-fails":
 			if step.Node == nil {
 				return fmt.Errorf("missing node")
 			}
-			e = s.Learn(*step.Node, step.Value, step.Action == "learn")
+			e = s.Learn(*step.Node, step.Value)
+			if step.Action == "cache-write-fails" {
+				s.CacheWriteFailed = true
+			}
 		case "disappear":
 			s.Disappear(step.ID)
 		case "remote-unavailable":
@@ -492,35 +564,16 @@ func runGraph(c Case) error {
 			default:
 				return fmt.Errorf("unknown remote failure")
 			}
-			s.RemoteUnavailable(step.ID, step.Flag)
-		case "local-security-corruption":
-			s.CorruptSecurityMemory()
-		case "reset-begin":
-			s.BeginReset()
-		case "baseline-learn":
-			if step.Node == nil {
-				return fmt.Errorf("missing baseline node")
-			}
-			e = s.BaselineLearn(*step.Node, step.Value, !step.Flag)
-		case "reset-complete-scan":
-			if step.Scan == nil || step.Success == nil {
-				return fmt.Errorf("missing scan expectations")
-			}
-			complete := graph.ResourceComplete(step.Scan)
-			if complete != step.Flag || s.FinishReset(complete) != *step.Success {
-				return fmt.Errorf("resource-complete baseline mismatch")
-			}
-			checks++
-		case "reset-complete":
-			if step.Success == nil || s.FinishReset(step.Flag) != *step.Success {
-				return fmt.Errorf("reset result mismatch")
-			}
-			checks++
-		case "reclassify":
-			if step.Node == nil {
-				return fmt.Errorf("missing reclassification node")
-			}
-			e = s.Reclassify(*step.Node, step.Value, !step.Flag)
+			s.RemoteUnavailable(step.ID)
+		case "optional-cache-failure":
+			// Hypothetical non-authoritative failure notification; baseline requires
+			// only that it cannot revoke publication. No diagnostic API is required.
+		case "history-clear":
+			s.ClearHistory()
+		case "history-lost":
+			s.LoseHistory()
+		case "remember":
+			s.Remember()
 		case "rename":
 			if step.Node == nil || step.Value == nil || step.Success == nil {
 				return fmt.Errorf("missing rename input")
@@ -533,7 +586,7 @@ func runGraph(c Case) error {
 			if step.StateWant == nil || step.Query == nil {
 				return fmt.Errorf("missing state expectation")
 			}
-			got := StateExpected{Known: []string{}, DeviceHeads: s.Heads("DEVICE", step.Query.Device), Parents: []string{}, Authoritative: s.Authoritative(), ContinuityUnknown: s.ContinuityUnknown}
+			got := StateExpected{Known: []string{}, DeviceHeads: s.Heads("DEVICE", step.Query.Device), Parents: []string{}, IntegrityOK: !s.IntegrityFailure}
 			for id := range s.Nodes {
 				got.Known = append(got.Known, id)
 			}
@@ -545,8 +598,6 @@ func runGraph(c Case) error {
 			checks++
 		case "discovery-incomplete":
 			s.DiscoveryIncomplete = step.Flag
-		case "continuity-unknown":
-			s.ContinuityUnknown = step.Flag
 		case "query":
 			if step.Query == nil || step.Want == nil {
 				return fmt.Errorf("missing graph expectation")
@@ -564,6 +615,9 @@ func runGraph(c Case) error {
 			checks++
 		default:
 			return fmt.Errorf("unknown graph action")
+		}
+		if plan != nil && step.Action != "publish" {
+			plan.Observe(s)
 		}
 		if (e != nil) != step.IntegrityError {
 			return fmt.Errorf("step %d integrity error: %v", i, e)

@@ -48,3 +48,16 @@ func TestStorageAuthenticationBoundary(t *testing.T) {
 		t.Fatal("unreadable candidate treated as complete")
 	}
 }
+
+func TestIncompleteScanPreservesAcceptedObservations(t *testing.T) {
+	k, _ := cryptov1.Derive(make([]byte, 32))
+	id, b, _ := k.Seal([]byte{0, 1, 0, 1, 2, 0, 2, 0, 1, 99})
+	entries := []Entry{
+		{Path: "objects-v1/" + id, Kind: "regular", Read: func() ([]byte, error) { return b, nil }},
+		{Path: "objects-v1/" + strings.Repeat("b", 64), Kind: "regular"},
+	}
+	obs, err := Scan("directory", entries, k)
+	if err == nil || len(obs) != 1 || obs[0].Class != "OPAQUE_UNSCOPED" {
+		t.Fatalf("%v %v", obs, err)
+	}
+}

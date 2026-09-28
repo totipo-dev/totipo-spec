@@ -1,18 +1,22 @@
 # Requirements Profiles
 
-[`v1-pre-rc.json`](v1-pre-rc.json) is a **moving** profile for the implemented
-v1/r14 corpus. It pins every current case ID and case-file SHA-256, plus hashes of
-the specification, manifest, manifest schema, and case schema. `make verify`
-checks these pins; `make conformance` additionally executes every case.
+[`v1-pre-rc.json`](v1-pre-rc.json) is the **moving baseline** profile for v1/r15.
+Its `required_cases` is exactly the manifest's 93 baseline IDs and case-file hashes.
+It also pins the specification, entire manifest, manifest schema, and case schema.
+The manifest contains 105 cases, including 12 conditional `advisory-history` cases.
+Conditional cases remain hash-pinned and validated but are not baseline requirements.
 
-The profile is created only from existing case files. IDs are stable once used
-by consumers. Changes to expected bytes or requirements need explicit review;
-normal checks never update the profile.
+`make conformance` runs baseline. `make conformance-all` (equivalently
+`go run ./conformance/cmd/totipo-conformance -root . -capability advisory-history`)
+runs baseline plus that capability. The included reference model explicitly declares
+support and `make check` executes both suites. No separate capability profile or
+wire negotiation is needed. A downstream client with no advisory-history feature
+can conform to the baseline profile without emitting history-derived diagnostics.
 
-Do not freeze `v1-rc1.json` until the first live Totipo implementation has
-independently consumed the corpus, byte expectations have stabilized, and the
-remaining specification/security and platform reviews have no blocker. This
-repository provides one reference consumer, not two independent implementations.
+`make verify` checks all manifest files, applicability, checksums, exact physical
+case coverage, and baseline profile membership. Unknown capabilities and duplicate
+IDs reject. Pre-RC case changes require review; checks never regenerate fixtures.
 
-The r14 profile pins the same 90 cases and case hashes as r13: all 85 r12 cases
-plus five recovery and provenance cases. It remains moving pre-RC evidence; no RC profile is frozen.
+Do not freeze an RC profile until an independent live implementation consumes the
+corpus and required security/platform reviews are complete. Optional capability
+selection does not change wire compatibility.

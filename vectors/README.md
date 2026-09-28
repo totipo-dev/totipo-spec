@@ -1,14 +1,15 @@
 # v1 Conformance Vectors
 
-The [manifest](manifest.json) lists 90 current v1/r14 cases, each with a permanent
+The [manifest](manifest.json) lists 105 current v1/r15 cases (93 baseline and 12 conditional `advisory-history`), each with an explicit
 ID, kind (`bytes`, `negative`, or `semantic`), specification sections, expected
 outcome, file path, and SHA-256 checksum. Case files live under `cases/<category>/`.
-The manifest is the live case contract; all original planned IDs are represented.
+The manifest is the live case contract; removed/replaced pre-RC IDs are documented.
 
-Run `make conformance` to execute the corpus, or `make verify` to validate JSON
+Run `make conformance` for baseline, `make conformance-all` for baseline plus
+`advisory-history`, or `make verify` to validate JSON
 contracts, file checksums, and the moving requirements profile. Neither command
 writes vectors. See [FORMAT.md](FORMAT.md) for the language-neutral data contract,
-fixed ECDSA fixture handling, and deliberate generation workflow.
+fixed ECDSA fixture handling, and deliberate maintenance workflow.
 
 Exact expected bytes are normative where the manifest marks them normative.
 Synthetic future tails deliberately contain bytes that are not valid v1 body
@@ -26,13 +27,13 @@ and types, wrong sizes, ignored sibling namespaces, and future-family coexistenc
 with/without a v1 compatibility assertion. Existing authenticated fixtures are
 referenced by case ID; their bytes are not duplicated or changed.
 
-Eight r12 cases cover sticky opaque-unscoped evidence and deliberate continuity
-reset, DEVICE convergence across rejected/unresolved heads, remote versus local
-corruption, initial DEVICE publication, and signature-context vault binding.
-The original 77 case files remain byte-identical.
+r15 replaces obsolete blocking/reset/mandatory-retention cases with explicit
+snapshot authorship, ordinary concurrency, semantic confirmation, optional-history
+warnings, independent publication acknowledgement, and simple binding establishment.
+Every case delta and fixed-byte comparison is recorded in the
+[r15 report](../review/V1_R15_STATE_MODEL_SIMPLIFICATION_REPORT.md).
 
-Five r13 cases add exact opaque-object retention (including persistence failure),
-retained-byte compatible reprocessing, reset frontier changes, late provenance
-recomputation, and resource-incomplete baseline scans. All 85 r12 case files and
-manifest entries remain unchanged. The existing publication case already checks
-both allowed orders and premature success.
+Each manifest entry has strict `applicability`: `baseline` or `conditional` with
+capability `advisory-history`. Conditional expected results are real requirements
+when that capability is claimed, not SKIP outcomes. The baseline profile requires
+no advisory cache or cross-run remembered history.

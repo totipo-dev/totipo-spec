@@ -1,6 +1,6 @@
 {
   "format": "totipo-case-v1",
-  "id": "v1.graph.local-security-memory-corruption.001",
+  "id": "v1.candidate.history-memory-lost.001",
   "operation": "graph",
   "expected": "PASS",
   "graph": {
@@ -13,7 +13,7 @@
           "type": "TOKEN",
           "identity": "T",
           "class": "SUPPORTED_VALID",
-          "parents": [],
+          "parents": null,
           "author_time": 0,
           "semantic_digest": "bytes-a"
         },
@@ -28,45 +28,33 @@
         }
       },
       {
-        "action": "local-security-corruption"
+        "action": "remember"
+      },
+      {
+        "action": "history-lost"
       },
       {
         "action": "query",
         "query": {
           "identity": "T",
-          "candidate": "a",
-          "device": ""
+          "candidate": "a"
         },
         "expect": {
           "heads": [
             "a"
           ],
           "value_state": "UNAMBIGUOUS",
-          "ordinary": false,
-          "author": false,
-          "candidate": false,
-          "candidate_warning": false,
-          "integrity_failure": true
-        }
-      },
-      {
-        "action": "state-query",
-        "id": "",
-        "query": {
-          "identity": "T",
-          "candidate": "a",
-          "device": "D"
-        },
-        "state_expect": {
-          "known": [
-            "a"
-          ],
-          "device_heads": [],
-          "parents": [],
-          "authoritative": false,
-          "continuity_unknown": true
+          "ordinary": true,
+          "author": true,
+          "candidate": true,
+          "candidate_warning": true,
+          "integrity_failure": false,
+          "warnings": [
+            "HISTORY_MEMORY_LOST"
+          ]
         }
       }
-    ]
+    ],
+    "notes": "Conditional advisory-history client detects loss of previously retained evidence; HISTORY_MEMORY_LOST does not disable a readable authenticated candidate or ordinary state."
   }
 }

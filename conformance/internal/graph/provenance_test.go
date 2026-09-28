@@ -47,7 +47,7 @@ func TestLateKeyForRetainedUnavailableToken(t *testing.T) {
 		n.Parents = append(n.Parents, hex.EncodeToString(parent))
 	}
 	s := New()
-	if err := s.Learn(n, &Value{Status: "LIVE"}, true); err != nil {
+	if err := s.Learn(n, &Value{Status: "LIVE"}); err != nil {
 		t.Fatal(err)
 	}
 	p := NewProvenance(s, keys)

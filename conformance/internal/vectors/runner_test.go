@@ -15,9 +15,13 @@ func TestCorpus(t *testing.T) {
 	if e = VerifyProfile(root, m); e != nil {
 		t.Fatal(e)
 	}
-	for _, c := range cases {
+	selected, e := Select(m, cases, ReferenceCapabilities)
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, c := range selected {
 		t.Run(c.ID, func(t *testing.T) {
-			if e := Run(c); e != nil {
+			if e := RunWithCapabilities(c, ReferenceCapabilities); e != nil {
 				t.Fatal(e)
 			}
 		})
@@ -87,23 +91,7 @@ func TestRecoveryReferencesAndExpectations(t *testing.T) {
 		t.Fatal(err)
 	}
 	checks := 0
-	for i, c := range cases {
-		if c.Retention != nil {
-			x := *c.Retention
-			x.Trials = append([]RetentionTrial(nil), x.Trials...)
-			x.Trials[0].Want.RetainedExact = false
-			c.Retention = &x
-			if Run(c) == nil {
-				t.Fatal("wrong exact-byte retention expectation accepted")
-			}
-			altered := append([]Case(nil), cases...)
-			x.Fixture = "v1.missing.fixture.001"
-			altered[i].Retention = &x
-			if resolveRecovery(altered) == nil {
-				t.Fatal("unresolved recovery fixture accepted")
-			}
-			checks++
-		}
+	for _, c := range cases {
 		if c.LateProvenance != nil {
 			x := *c.LateProvenance
 			x.Trials = append([]ProvenanceTrial(nil), x.Trials...)
@@ -115,7 +103,106 @@ func TestRecoveryReferencesAndExpectations(t *testing.T) {
 			checks++
 		}
 	}
-	if checks != 3 {
+	if checks != 1 {
 		t.Fatalf("missing recovery coverage: %d", checks)
+	}
+}
+
+func TestBaselineWithoutAdvisoryHistory(t *testing.T) {
+	m, cases, err := Read(filepath.Join("..", "..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	selected, err := Select(m, cases, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseline := 0
+	for _, e := range m.Cases {
+		if e.Applicability.Kind == "baseline" {
+			baseline++
+		}
+	}
+	if len(selected) != baseline || len(selected) >= len(cases) {
+		t.Fatal("baseline did not exclude optional cases")
+	}
+	for _, c := range selected {
+		if err := Run(c); err != nil {
+			t.Fatalf("baseline without cache %s: %v", c.ID, err)
+		}
+	}
+	full, err := Select(m, cases, ReferenceCapabilities)
+	if err != nil || len(full) != len(cases) {
+		t.Fatal("reference suite omitted cases", err)
+	}
+	for _, c := range cases {
+		if c.ID == "v1.history.memory-lost.001" && Run(c) == nil {
+			t.Fatal("conditional operation silently ran without capability")
+		}
+	}
+	for _, caps := range [][]string{{"unknown"}, {AdvisoryHistory, AdvisoryHistory}} {
+		if _, err := Select(m, cases, caps); err == nil {
+			t.Fatal("invalid capabilities accepted")
+		}
+	}
+}
+
+func TestProfileRequiresExactlyBaseline(t *testing.T) {
+	root := filepath.Join("..", "..", "..")
+	m, _, err := Read(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kind := range []string{"baseline", "conditional"} {
+		altered := m
+		altered.Cases = append([]Entry(nil), m.Cases...)
+		for i, e := range altered.Cases {
+			if e.Applicability.Kind != kind {
+				continue
+			}
+			if kind == "baseline" {
+				c := AdvisoryHistory
+				altered.Cases[i].Applicability = Applicability{Kind: "conditional", Capability: &c}
+			} else {
+				altered.Cases[i].Applicability = Applicability{Kind: "baseline"}
+			}
+			break
+		}
+		if VerifyProfile(root, altered) == nil {
+			t.Fatal("profile accepted changed applicability", kind)
+		}
+	}
+}
+
+func TestUnlistedPhysicalCaseRejected(t *testing.T) {
+	root := t.TempDir()
+	// Copy current contract into an isolated directory, including all case files.
+	src := filepath.Join("..", "..", "..", "vectors")
+	err := filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		dst := filepath.Join(root, "vectors", rel)
+		if d.IsDir() {
+			return os.MkdirAll(dst, 0755)
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(dst, b, 0644)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "vectors/cases/unlisted.json"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Read(root); err == nil {
+		t.Fatal("unlisted physical case accepted")
 	}
 }

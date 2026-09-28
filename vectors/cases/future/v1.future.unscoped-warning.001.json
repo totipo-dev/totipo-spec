@@ -1,6 +1,6 @@
 {
   "format": "totipo-case-v1",
-  "id": "v1.future.disappearance-retains-routing.001",
+  "id": "v1.future.unscoped-warning.001",
   "operation": "graph",
   "expected": "PASS",
   "graph": {
@@ -30,21 +30,15 @@
       {
         "action": "learn",
         "node": {
-          "id": "b",
-          "version": 2,
-          "type": "TOKEN",
-          "identity": "T",
-          "class": "OPAQUE_ROUTABLE",
-          "parents": [
-            "a"
-          ],
+          "id": "u",
+          "version": 3,
+          "type": "",
+          "identity": "",
+          "class": "OPAQUE_UNSCOPED",
+          "parents": null,
           "author_time": 0,
-          "semantic_digest": "bytes-b"
+          "semantic_digest": "bytes-u"
         }
-      },
-      {
-        "action": "disappear",
-        "id": "b"
       },
       {
         "action": "query",
@@ -54,16 +48,20 @@
         },
         "expect": {
           "heads": [
-            "b"
+            "a"
           ],
-          "value_state": "VALUE_INCOMPLETE_OPAQUE",
-          "ordinary": false,
-          "author": false,
+          "value_state": "UNAMBIGUOUS",
+          "ordinary": true,
+          "author": true,
           "candidate": true,
           "candidate_warning": true,
-          "integrity_failure": false
+          "integrity_failure": false,
+          "warnings": [
+            "UNKNOWN_FUTURE_EVIDENCE"
+          ]
         }
       }
-    ]
+    ],
+    "notes": "Currently visible authenticated OPAQUE_UNSCOPED evidence requires a compatibility diagnostic, without a global ordinary-use/authorship block. This is baseline current evidence, not remembered history."
   }
 }

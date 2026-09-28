@@ -52,9 +52,9 @@ func runPublication(c Case) error {
 	for _, event := range x.Events {
 		switch event.Action {
 		case "advertise":
-			p.Advertise(event.DeviceID, event.PublicKey, event.Valid, event.Verified, event.Durable)
+			p.Advertise(event.DeviceID, event.PublicKey, event.Valid, event.Verified, event.Acknowledged)
 		case "publish-token":
-			p.PublishToken(event.Durable)
+			p.PublishToken(event.Acknowledged)
 		case "report-success":
 			if event.Success == nil || p.ReportSuccess() != *event.Success {
 				return fmt.Errorf("publication success gate mismatch")

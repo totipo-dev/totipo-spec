@@ -9,10 +9,12 @@ Totipo is an encrypted, append-only, multi-device TOTP vault format designed for
 The current specification is:
 
 - **Totipo Vault Format v1**
-- design revision **r14**
+- design revision **r15**
 - moving pre-release-candidate conformance evidence
 
 The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
+
+Authenticated immutable objects over unreliable sync; local history is advisory; vault identity remains strongly pinned locally. Advisory remembered history is optional. Baseline v1/r15 conformance does not require retaining history across runs; implementing it improves regression detection only.
 
 ## Design direction
 
@@ -20,7 +22,7 @@ The current v1 design uses:
 
 - immutable 1024-byte encrypted semantic objects;
 - complete-state `TOKEN` assertions rather than field-level deltas;
-- append-only durable authenticated topology on established clients;
+- causal graphs derived from accepted authenticated snapshots;
 - whole-state conflict handling;
 - explicit candidate credential use when certainty is degraded;
 - P-256 provenance separated from TOKEN state authority;
@@ -72,7 +74,8 @@ The Go module supports Go 1.23 or later; the schema checker uses Python 3.9 or l
 ```sh
 make spec-check
 make test
-make conformance
+make conformance       # baseline
+make conformance-all   # baseline + advisory-history
 make verify
 make check
 ```
@@ -82,14 +85,16 @@ build cache under `.direnv/` for the jailed development environment. When runnin
 Go directly there, set `GOCACHE="$PWD/.direnv/go-build"` from the repository root.
 The module tests run with `go -C conformance test ./...`.
 
-The [manifest](vectors/manifest.json) currently contains 90 cases. The
-[moving pre-RC profile](requirements/v1-pre-rc.json) pins their IDs and hashes;
+The [manifest](vectors/manifest.json) contains 105 cases: 93 baseline and 12
+conditional `advisory-history` cases. The [moving pre-RC baseline profile](requirements/v1-pre-rc.json)
+pins only the 93 baseline IDs/hashes; the manifest pins every conditional case too.
 it is not a release or a frozen RC profile. Normal checks never regenerate cases.
 
 See the [vector contract](vectors/FORMAT.md), [Go consumer](conformance/README.md),
 [r12 hardening report](review/V1_R12_HARDENING_REPORT.md),
 [r13 hardening report](review/V1_R13_HARDENING_REPORT.md), and
-[r14 threat-model simplification report](review/V1_R14_THREAT_MODEL_SIMPLIFICATION_REPORT.md).
+[r14 threat-model simplification report](review/V1_R14_THREAT_MODEL_SIMPLIFICATION_REPORT.md), and
+[r15 state-model simplification report](review/V1_R15_STATE_MODEL_SIMPLIFICATION_REPORT.md).
 
 ## Current next step
 

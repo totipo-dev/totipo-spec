@@ -115,12 +115,12 @@ func runStorage(c Case) error {
 			}
 		}
 		if obs.Class == object.Unscoped {
-			if e := state.LearnOpaque(id, obs.ExactObject, keys, true); e != nil {
+			if e := state.LearnOpaque(id, obs.ExactObject, keys); e != nil {
 				return e
 			}
 			continue
 		}
-		if e := state.Learn(n, value, true); e != nil {
+		if e := state.Learn(n, value); e != nil {
 			return e
 		}
 	}
@@ -132,7 +132,7 @@ func runStorage(c Case) error {
 	}
 	sort.Strings(got.Learned)
 	sort.Strings(got.Unscoped)
-	got.Authoritative = state.Authoritative()
+	got.IntegrityOK = !state.IntegrityFailure
 	q := x.Query
 	got.View = state.Evaluate(q.Identity, q.Candidate, q.Device)
 	if !reflect.DeepEqual(got, x.Want) {

@@ -6,17 +6,17 @@ import (
 	"testing"
 )
 
-func TestEdgeResolutionAndDurability(t *testing.T) {
+func TestEdgeResolutionWithinSnapshot(t *testing.T) {
 	s := New()
 	a := Node{ID: "a", Version: 1, Type: "TOKEN", Identity: "T", Class: "SUPPORTED_VALID", Parents: []string{"b", "c", "d"}, Digest: "A"}
-	if e := s.Learn(a, nil, true); e != nil {
+	if e := s.Learn(a, &Value{}); e != nil {
 		t.Fatal(e)
 	}
 	if s.Edge("a", "b") != "UNRESOLVED" {
 		t.Fatal("missing")
 	}
 	for _, n := range []Node{{ID: "b", Type: "DEVICE", Identity: "T", Class: "OPAQUE_ROUTABLE", Digest: "B"}, {ID: "c", Type: "TOKEN", Identity: "X", Class: "SUPPORTED_VALID", Digest: "C"}, {ID: "d", Type: "TOKEN", Identity: "T", Class: "OPAQUE_ROUTABLE", Digest: "D"}} {
-		if e := s.Learn(n, nil, true); e != nil {
+		if e := s.Learn(n, &Value{}); e != nil {
 			t.Fatal(e)
 		}
 	}
@@ -24,8 +24,8 @@ func TestEdgeResolutionAndDurability(t *testing.T) {
 		t.Fatal("edge classification")
 	}
 	s.Disappear("d")
-	if s.Edge("a", "d") != "RESOLVED" {
-		t.Fatal("durable edge lost")
+	if s.Edge("a", "d") != "UNRESOLVED" {
+		t.Fatal("absent parent resolved")
 	}
 	a.Parents[0] = "mutation"
 	if s.Nodes["a"].Parents[0] != "b" {
@@ -36,10 +36,10 @@ func TestDeviceCycle(t *testing.T) {
 	s := New()
 	a := Node{ID: "a", Type: "DEVICE", Identity: "D", Class: "OPAQUE_ROUTABLE", Parents: []string{"b"}}
 	b := Node{ID: "b", Type: "DEVICE", Identity: "D", Class: "SUPPORTED_VALID", Parents: []string{"a"}}
-	if e := s.Learn(a, nil, true); e != nil {
+	if e := s.Learn(a, &Value{}); e != nil {
 		t.Fatal(e)
 	}
-	if e := s.Learn(b, nil, true); e != ErrIntegrity || !s.ContinuityUnknown {
+	if e := s.Learn(b, &Value{}); e != ErrIntegrity || !s.IntegrityFailure {
 		t.Fatal("cycle did not block")
 	}
 }
@@ -64,73 +64,85 @@ func FuzzArrivalAndDisappearance(f *testing.F) {
 		}
 		a, b := New(), New()
 		for i := range nodes {
-			if e := a.Learn(nodes[i], nil, true); e != nil {
+			if e := a.Learn(nodes[i], &Value{}); e != nil {
 				t.Fatal(e)
 			}
-			if e := b.Learn(nodes[len(nodes)-1-i], nil, true); e != nil {
+			if e := b.Learn(nodes[len(nodes)-1-i], &Value{}); e != nil {
 				t.Fatal(e)
 			}
 		}
 		if !reflect.DeepEqual(a.Heads("TOKEN", "T"), b.Heads("TOKEN", "T")) {
 			t.Fatal("arrival changed heads")
 		}
-		before := a.Heads("TOKEN", "T")
+
 		for id := range a.Nodes {
 			a.Disappear(id)
 		}
-		if !reflect.DeepEqual(before, a.Heads("TOKEN", "T")) {
-			t.Fatal("disappearance erased topology")
+		if len(a.Heads("TOKEN", "T")) != 0 {
+			t.Fatal("absent objects remained current")
 		}
 	})
 }
 
-func TestResetRequiresCompletePersistedConsistentBaseline(t *testing.T) {
-	for _, failure := range []string{"incomplete", "persistence", "integrity"} {
-		t.Run(failure, func(t *testing.T) {
-			s := New()
-			old := Node{ID: "old", Class: "OPAQUE_UNSCOPED", Digest: "old"}
-			if e := s.Learn(old, nil, true); e != nil {
-				t.Fatal(e)
-			}
-			s.BeginReset()
-			n := Node{ID: "new", Class: "SUPPORTED_VALID", Type: "TOKEN", Identity: "T", Digest: "new"}
-			if e := s.BaselineLearn(n, nil, failure != "persistence"); e != nil {
-				t.Fatal(e)
-			}
-			if failure == "integrity" {
-				n.Digest = "conflicting"
-				if e := s.BaselineLearn(n, nil, true); e != ErrIntegrity {
-					t.Fatal("missing integrity failure")
-				}
-			}
-			if s.FinishReset(failure != "incomplete") || s.BaseSafe() || len(s.Nodes) != 1 || s.Nodes["old"].Digest != "old" {
-				t.Fatal("failed scan replaced epoch or enabled operations")
-			}
-		})
+func TestSnapshotIsolationAndAdvisorySeparation(t *testing.T) {
+	s := New()
+	v := Value{Status: "LIVE", Account: "old"}
+	a := Node{ID: "a", Type: "TOKEN", Identity: "T", Class: "SUPPORTED_VALID", Digest: "a"}
+	if err := s.Learn(a, &v); err != nil {
+		t.Fatal(err)
+	}
+	snapshot := s.Snapshot()
+	s.Remember()
+	s.Disappear("a")
+	if len(s.Nodes) != 0 || len(snapshot.Nodes) != 1 {
+		t.Fatal("history or later observations altered accepted snapshot")
+	}
+	if got := s.Warnings(); !reflect.DeepEqual(got, []string{"HISTORY_REGRESSION"}) {
+		t.Fatal(got)
+	}
+	s.LoseHistory()
+	if len(snapshot.Nodes) != 1 || len(s.Nodes) != 0 {
+		t.Fatal("cache loss changed accepted evidence")
 	}
 }
 
-func TestReclassificationRequiresExactBytesAndPersistence(t *testing.T) {
-	for _, failure := range []string{"different-bytes", "persistence"} {
-		t.Run(failure, func(t *testing.T) {
-			s := New()
-			n := Node{ID: "u", Class: "OPAQUE_UNSCOPED", Digest: "exact"}
-			if e := s.Learn(n, nil, true); e != nil {
-				t.Fatal(e)
+func TestConfirmationBindsDesiredValueAndIntent(t *testing.T) {
+	for _, change := range []string{"value", "intent"} {
+		s := New()
+		for _, id := range []string{"a", "b"} {
+			v := Value{Status: "LIVE", Account: id}
+			if err := s.Learn(Node{ID: id, Type: "TOKEN", Identity: "T", Class: "SUPPORTED_VALID", Digest: id}, &v); err != nil {
+				t.Fatal(err)
 			}
-			n.Class = "OPAQUE_ROUTABLE"
-			n.Type = "TOKEN"
-			n.Identity = "T"
-			if failure == "different-bytes" {
-				n.Digest = "different"
-			}
-			e := s.Reclassify(n, nil, failure != "persistence")
-			if (e == ErrIntegrity) != (failure == "different-bytes") {
-				t.Fatal(e)
-			}
-			if s.Authoritative() || s.BaseSafe() || s.Nodes["u"].Class != "OPAQUE_UNSCOPED" {
-				t.Fatal("unsafe reclassification cleared evidence")
-			}
-		})
+		}
+		p, err := s.Plan(Node{ID: "c", Type: "TOKEN", Identity: "T", Class: "SUPPORTED_VALID", Digest: "c"}, Value{Status: "LIVE", Account: "chosen"}, "resolve", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if change == "value" {
+			p.Value.Account = "different"
+		} else {
+			p.Intent = "restore"
+		}
+		if p.Publish(s, true) {
+			t.Fatal("changed confirmed decision published")
+		}
+	}
+}
+
+func TestNoHistoryFeatureIsNotMemoryLoss(t *testing.T) {
+	s := New()
+	s.LoseHistory()
+	if len(s.Warnings()) != 0 {
+		t.Fatal("absence of feature synthesized history warning")
+	}
+	s.Remember()
+	s.LoseHistory()
+	if got := s.Warnings(); !reflect.DeepEqual(got, []string{"HISTORY_MEMORY_LOST"}) {
+		t.Fatal(got)
+	}
+	s.ClearHistory()
+	if len(s.Warnings()) != 0 {
+		t.Fatal("deliberate clearing retained warning state")
 	}
 }

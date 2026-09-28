@@ -12,6 +12,25 @@ class SchemaContractTests(unittest.TestCase):
         self.schema = read(base / "case.schema.json")
         self.case = read(base / "cases/graph/v1.graph.sequential.001.json")
 
+    def test_manifest_applicability(self):
+        base = Path(__file__).resolve().parent.parent / "vectors"
+        schema = read(base / "manifest.schema.json")
+        manifest = read(base / "manifest.json")
+        for valid in ({"kind": "baseline"}, {"kind": "conditional", "capability": "advisory-history"}):
+            manifest["cases"][0]["applicability"] = valid
+            validate(manifest, schema)
+        for invalid in ({}, {"kind": "optional"}, {"kind": "conditional"},
+                        {"kind": "conditional", "capability": "unknown"},
+                        {"kind": "baseline", "capability": "advisory-history"},
+                        {"kind": "baseline", "capability": None},
+                        {"kind": "baseline", "extra": True}):
+            manifest["cases"][0]["applicability"] = invalid
+            with self.assertRaises(Invalid):
+                validate(manifest, schema)
+        del manifest["cases"][0]["applicability"]
+        with self.assertRaises(Invalid):
+            validate(manifest, schema)
+
     def test_required_false_result_cannot_be_omitted(self):
         for field in ("candidate", "ordinary", "integrity_failure"):
             case = copy.deepcopy(self.case)

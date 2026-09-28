@@ -7,14 +7,15 @@ import (
 )
 
 type Entry struct {
-	ID        string   `json:"id"`
-	Category  string   `json:"category"`
-	Kind      string   `json:"kind"`
-	Normative bool     `json:"normative"`
-	Path      string   `json:"path"`
-	Expected  string   `json:"expected"`
-	Sections  []string `json:"spec_sections"`
-	SHA256    string   `json:"sha256"`
+	Applicability Applicability `json:"applicability"`
+	ID            string        `json:"id"`
+	Category      string        `json:"category"`
+	Kind          string        `json:"kind"`
+	Normative     bool          `json:"normative"`
+	Path          string        `json:"path"`
+	Expected      string        `json:"expected"`
+	Sections      []string      `json:"spec_sections"`
+	SHA256        string        `json:"sha256"`
 }
 type Manifest struct {
 	Format   string  `json:"format"`
@@ -65,11 +66,11 @@ type StorageObservation struct {
 	Class string `json:"class"`
 }
 type StorageExpected struct {
-	Observations  []StorageObservation `json:"observations"`
-	Learned       []string             `json:"learned_ids"`
-	Unscoped      []string             `json:"opaque_unscoped_ids"`
-	Authoritative bool                 `json:"authoritative"`
-	View          graph.Result         `json:"view"`
+	Observations []StorageObservation `json:"observations"`
+	Learned      []string             `json:"learned_ids"`
+	Unscoped     []string             `json:"opaque_unscoped_ids"`
+	IntegrityOK  bool                 `json:"integrity_ok"`
+	View         graph.Result         `json:"view"`
 }
 type StorageCase struct {
 	Notes         string          `json:"notes"`
@@ -80,7 +81,7 @@ type StorageCase struct {
 	Want          StorageExpected `json:"expect"`
 }
 type Case struct {
-	Retention      *RetentionCase        `json:"retention,omitempty"`
+	Local          *LocalCase            `json:"local,omitempty"`
 	LateProvenance *LateProvenanceCase   `json:"late_provenance,omitempty"`
 	Context        *SignatureContextCase `json:"signature_context,omitempty"`
 	Publication    *PublicationCase      `json:"publication,omitempty"`
@@ -149,27 +150,27 @@ type Query struct {
 	Device    string `json:"device,omitempty"`
 }
 type Step struct {
-	Scan           []graph.ScanCandidate `json:"scan,omitempty"`
-	StateWant      *StateExpected        `json:"state_expect,omitempty"`
-	Success        *bool                 `json:"success,omitempty"`
-	Reason         string                `json:"reason,omitempty"`
-	Action         string                `json:"action"`
-	Node           *graph.Node           `json:"node,omitempty"`
-	Value          *graph.Value          `json:"value,omitempty"`
-	ID             string                `json:"id,omitempty"`
-	Flag           bool                  `json:"flag,omitempty"`
-	Query          *Query                `json:"query,omitempty"`
-	Want           *graph.Result         `json:"expect,omitempty"`
-	IntegrityError bool                  `json:"integrity_error,omitempty"`
+	Intent         string         `json:"intent,omitempty"`
+	Parents        []string       `json:"parents,omitempty"`
+	StateWant      *StateExpected `json:"state_expect,omitempty"`
+	Success        *bool          `json:"success,omitempty"`
+	Reason         string         `json:"reason,omitempty"`
+	Action         string         `json:"action"`
+	Node           *graph.Node    `json:"node,omitempty"`
+	Value          *graph.Value   `json:"value,omitempty"`
+	ID             string         `json:"id,omitempty"`
+	Flag           bool           `json:"flag,omitempty"`
+	Query          *Query         `json:"query,omitempty"`
+	Want           *graph.Result  `json:"expect,omitempty"`
+	IntegrityError bool           `json:"integrity_error,omitempty"`
 }
 
-// StateExpected exposes durable topology separately from presentation and values.
+// StateExpected exposes accepted topology separately from presentation.
 type StateExpected struct {
-	Known             []string `json:"known"`
-	DeviceHeads       []string `json:"device_heads"`
-	Parents           []string `json:"parents"`
-	Authoritative     bool     `json:"authoritative"`
-	ContinuityUnknown bool     `json:"continuity_unknown"`
+	Known       []string `json:"known"`
+	DeviceHeads []string `json:"device_heads"`
+	Parents     []string `json:"parents"`
+	IntegrityOK bool     `json:"integrity_ok"`
 }
 type SignatureContextCase struct {
 	A        string `json:"context_a_hex"`
@@ -184,11 +185,11 @@ type PublicationCase struct {
 	Events    []PublicationEvent `json:"events"`
 }
 type PublicationEvent struct {
-	Action    string `json:"action"`
-	DeviceID  string `json:"device_id,omitempty"`
-	PublicKey string `json:"public_key,omitempty"`
-	Valid     bool   `json:"assertion_valid,omitempty"`
-	Verified  bool   `json:"verified,omitempty"`
-	Durable   bool   `json:"durable,omitempty"`
-	Success   *bool  `json:"success,omitempty"`
+	Action       string `json:"action"`
+	DeviceID     string `json:"device_id,omitempty"`
+	PublicKey    string `json:"public_key,omitempty"`
+	Valid        bool   `json:"assertion_valid,omitempty"`
+	Verified     bool   `json:"verified,omitempty"`
+	Acknowledged bool   `json:"acknowledged,omitempty"`
+	Success      *bool  `json:"success,omitempty"`
 }

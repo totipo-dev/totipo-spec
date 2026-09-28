@@ -1,7 +1,7 @@
 // Package storage evaluates an observed filesystem environment for the v1
 // envelope family. It does not open host paths: a live adapter must honor observed
 // entry kinds, bound reads, and handle ordinary churn conservatively. Hostile local
-// syscall-race immunity is optional under r14.
+// syscall-race immunity is optional under r15.
 package storage
 
 import (

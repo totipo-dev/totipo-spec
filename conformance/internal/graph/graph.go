@@ -1,6 +1,4 @@
-// Package graph is a deterministic in-memory model of durable security records.
-// It models successful persistence, loss of synchronized bytes, and safety gates;
-// it is not a filesystem/database implementation.
+// Package graph interprets explicit accepted snapshots. Advisory history only supplies warnings.
 package graph
 
 import (
@@ -10,7 +8,7 @@ import (
 	"sort"
 )
 
-var ErrIntegrity = errors.New("local graph integrity failure")
+var ErrIntegrity = errors.New("accepted graph integrity failure")
 
 type Node struct {
 	ID         string   `json:"id"`
@@ -37,103 +35,131 @@ type Value struct {
 	Verified    bool   `json:"verified,omitempty"`
 	Provenance  string `json:"provenance,omitempty"`
 }
+
+// State contains accepted evidence for one observation context. It is not a journal.
 type State struct {
-	OpaqueRecords       map[string]OpaqueUnscopedRecord
 	Nodes               map[string]Node
 	Available           map[string]Value
-	ContinuityUnknown   bool
-	PersistenceBlocked  bool
+	IntegrityFailure    bool
 	DiscoveryIncomplete bool
-	replacement         *State
+	HistoryLost         bool
+	HistoryExpected     bool
+	CacheWriteFailed    bool
+	Remembered          map[string]Node
 }
 
 func New() *State {
-	return &State{Nodes: map[string]Node{}, Available: map[string]Value{}, OpaqueRecords: map[string]OpaqueUnscopedRecord{}}
+	return &State{Nodes: map[string]Node{}, Available: map[string]Value{}, Remembered: map[string]Node{}}
+}
+
+// Snapshot makes a detached planning snapshot; subsequent observations cannot mutate it.
+func (s *State) Snapshot() *State {
+	c := New()
+	for id, n := range s.Nodes {
+		c.Nodes[id] = clone(n)
+	}
+	for id, v := range s.Available {
+		c.Available[id] = v
+	}
+	c.IntegrityFailure = s.IntegrityFailure
+	return c
+}
+func (s *State) Remember() {
+	for id, n := range s.Nodes {
+		s.Remembered[id] = clone(n)
+	}
+	s.HistoryLost = false
+	s.HistoryExpected = true
+}
+
+// LoseHistory requires meaningful evidence of previously retained/expected state.
+func (s *State) LoseHistory() { s.Remembered = map[string]Node{}; s.HistoryLost = s.HistoryExpected }
+func (s *State) ClearHistory() {
+	s.Remembered = map[string]Node{}
+	s.HistoryLost = false
+	s.HistoryExpected = false
+	s.CacheWriteFailed = false
+}
+
+func (s *State) Warnings() []string {
+	var w []string
+	if s.DiscoveryIncomplete {
+		w = append(w, "PROCESSING_INCOMPLETE")
+	}
+	if s.HistoryLost {
+		w = append(w, "HISTORY_MEMORY_LOST")
+	}
+	if s.CacheWriteFailed {
+		w = append(w, "HISTORY_CACHE_WRITE_FAILED")
+	}
+	for id, old := range s.Remembered {
+		incorporated := false
+		if _, ok := s.Nodes[id]; ok {
+			incorporated = true
+		}
+		// A direct signed claim incorporates this exact remembered ID even if its
+		// bytes are unavailable. Do not traverse remembered/cache-only intermediates.
+		for _, n := range s.Nodes {
+			for _, p := range n.Parents {
+				if p == id && n.Class != "OPAQUE_UNSCOPED" && old.Class != "OPAQUE_UNSCOPED" && n.Type == old.Type && n.Identity == old.Identity {
+					incorporated = true
+				}
+			}
+		}
+		if !incorporated {
+			w = append(w, "HISTORY_REGRESSION")
+			break
+		}
+	}
+	for _, n := range s.Nodes {
+		if n.Class == "OPAQUE_UNSCOPED" {
+			w = append(w, "UNKNOWN_FUTURE_EVIDENCE")
+			break
+		}
+	}
+	sort.Strings(w)
+	return w
 }
 func clone(n Node) Node {
 	n.Parents = append([]string(nil), n.Parents...)
 	sort.Strings(n.Parents)
 	return n
 }
-func (s *State) Learn(n Node, v *Value, persist bool) error {
-	if !persist {
-		s.PersistenceBlocked = true
-		return nil
-	}
+func (s *State) Learn(n Node, v *Value) error {
 	n = clone(n)
 	if old, ok := s.Nodes[n.ID]; ok && !reflect.DeepEqual(old, n) {
-		s.ContinuityUnknown = true
+		s.IntegrityFailure = true
 		return ErrIntegrity
+	}
+	if n.Class == "SUPPORTED_VALID" && v == nil {
+		return errors.New("supported accepted observation requires complete value")
+	}
+	if old, ok := s.Available[n.ID]; ok && v != nil {
+		previous, next := old, *v
+		previous.Verified, next.Verified = false, false
+		previous.Provenance, next.Provenance = "", ""
+		if previous != next {
+			s.IntegrityFailure = true
+			return ErrIntegrity
+		}
 	}
 	s.Nodes[n.ID] = n
 	if v != nil && n.Class == "SUPPORTED_VALID" {
 		s.Available[n.ID] = *v
 	}
 	if s.cyclic() {
-		s.ContinuityUnknown = true
+		s.IntegrityFailure = true
 		return ErrIntegrity
 	}
 	return nil
 }
-func (s *State) Disappear(id string) { delete(s.Available, id) }
 
-// RemoteUnavailable never changes durable security knowledge. A trusted exact
-// local copy may continue supplying the value despite hostile synchronized bytes.
-func (s *State) RemoteUnavailable(id string, trustedCopy bool) {
-	if !trustedCopy {
-		s.Disappear(id)
-	}
-}
-
-func (s *State) CorruptSecurityMemory() { s.ContinuityUnknown = true }
-
-// BeginReset represents explicit confirmation after warning that lost ancestry
-// can make historical assertions current/conflicting without making them newer.
-// The old epoch remains intact until a complete, successfully persisted scan.
-func (s *State) BeginReset() {
-	s.ContinuityUnknown = true
-	s.replacement = New()
-}
-func (s *State) BaselineLearn(n Node, v *Value, persist bool) error {
-	if s.replacement == nil {
-		return errors.New("reset not started")
-	}
-	return s.replacement.Learn(n, v, persist)
-}
-func (s *State) FinishReset(complete bool) bool {
-	if s.replacement == nil || !complete || !s.replacement.BaseSafe() || s.replacement.DiscoveryIncomplete {
-		return false
-	}
-	*s = *s.replacement
-	return true
-}
-
-// Reclassify is the symbolic r12 topology operation. Concrete retained records
-// must pass through ReprocessOpaque, which consumes their authenticated bytes.
-func (s *State) Reclassify(n Node, v *Value, persist bool) error {
-	if _, concrete := s.OpaqueRecords[n.ID]; concrete {
-		return errors.New("use retained-byte reprocessing")
-	}
-	return s.reclassify(n, v, persist)
-}
-
-func (s *State) reclassify(n Node, v *Value, persist bool) error {
-	old, ok := s.Nodes[n.ID]
-	if !ok || old.Class != "OPAQUE_UNSCOPED" || old.Digest == "" || old.Digest != n.Digest ||
-		(n.Class != "SUPPORTED_VALID" && n.Class != "OPAQUE_ROUTABLE") {
-		s.ContinuityUnknown = true
-		return ErrIntegrity
-	}
-	if !persist {
-		s.PersistenceBlocked = true
-		return nil
-	}
-	delete(s.Nodes, n.ID)
-	return s.Learn(n, v, true)
-}
+// Disappear applies a subsequent observation in which this object is absent.
+func (s *State) Disappear(id string)         { delete(s.Available, id); delete(s.Nodes, id) }
+func (s *State) RemoteUnavailable(id string) { s.Disappear(id) }
 
 func (s *State) Rename(n Node, v Value) bool {
-	if !s.Authoritative() || n.Type != "DEVICE" || n.Class != "SUPPORTED_VALID" || !verified(v) {
+	if s.IntegrityFailure || n.Type != "DEVICE" || n.Class != "SUPPORTED_VALID" || !verified(v) {
 		return false
 	}
 	heads := s.Heads("DEVICE", n.Identity)
@@ -143,7 +169,7 @@ func (s *State) Rename(n Node, v Value) bool {
 		}
 	}
 	n.Parents = heads
-	return s.Learn(n, &v, true) == nil
+	return s.Learn(n, &v) == nil
 }
 
 func verified(v Value) bool { return v.Provenance == "VERIFIED" || (v.Provenance == "" && v.Verified) }
@@ -211,33 +237,23 @@ func (s *State) Heads(typ, identity string) []string {
 	sort.Strings(out)
 	return out
 }
-func (s *State) BaseSafe() bool { return !s.ContinuityUnknown && !s.PersistenceBlocked }
-func (s *State) Authoritative() bool {
-	if !s.BaseSafe() || s.DiscoveryIncomplete {
-		return false
-	}
-	for _, n := range s.Nodes {
-		if n.Class == "OPAQUE_UNSCOPED" {
-			return false
-		}
-	}
-	return true
-}
 
 type Result struct {
-	Heads            []string `json:"heads"`
-	ValueState       string   `json:"value_state"`
-	Ordinary         bool     `json:"ordinary"`
-	Author           bool     `json:"author"`
-	Candidate        bool     `json:"candidate"`
-	CandidateWarning bool     `json:"candidate_warning"`
-	IntegrityFailure bool     `json:"integrity_failure"`
-	Presentation     string   `json:"presentation,omitempty"`
+	Warnings             []string `json:"warnings,omitempty"`
+	RequiresConfirmation bool     `json:"requires_confirmation,omitempty"`
+	Heads                []string `json:"heads"`
+	ValueState           string   `json:"value_state"`
+	Ordinary             bool     `json:"ordinary"`
+	Author               bool     `json:"author"`
+	Candidate            bool     `json:"candidate"`
+	CandidateWarning     bool     `json:"candidate_warning"`
+	IntegrityFailure     bool     `json:"integrity_failure"`
+	Presentation         string   `json:"presentation,omitempty"`
 }
 
 func (s *State) Evaluate(identity, candidate, device string) Result {
-	r := Result{Heads: s.Heads("TOKEN", identity), ValueState: "EMPTY", IntegrityFailure: s.ContinuityUnknown}
-	opaque, missing := false, false
+	r := Result{Warnings: s.Warnings(), Heads: s.Heads("TOKEN", identity), ValueState: "EMPTY", IntegrityFailure: s.IntegrityFailure}
+	opaque := false
 	values := map[string]Value{}
 	for _, id := range r.Heads {
 		n := s.Nodes[id]
@@ -245,11 +261,7 @@ func (s *State) Evaluate(identity, candidate, device string) Result {
 			opaque = true
 			continue
 		}
-		v, ok := s.Available[id]
-		if !ok {
-			missing = true
-			continue
-		}
+		v := s.Available[id]
 		v.DisplayName = ""
 		v.Verified = false
 		v.Provenance = ""
@@ -259,22 +271,21 @@ func (s *State) Evaluate(identity, candidate, device string) Result {
 	switch {
 	case opaque:
 		r.ValueState = "VALUE_INCOMPLETE_OPAQUE"
-	case missing:
-		r.ValueState = "VALUE_INCOMPLETE_UNAVAILABLE"
 	case len(values) > 1:
 		r.ValueState = "CONFLICT"
 	case len(values) == 1:
 		r.ValueState = "UNAMBIGUOUS"
 	}
-	r.Author = s.Authoritative() && !opaque
-	if r.ValueState == "UNAMBIGUOUS" && s.Authoritative() {
+	r.Author = !s.IntegrityFailure && !opaque && (r.ValueState == "UNAMBIGUOUS" || r.ValueState == "EMPTY")
+	r.RequiresConfirmation = !s.IntegrityFailure && r.ValueState == "CONFLICT"
+	if r.ValueState == "UNAMBIGUOUS" && !s.IntegrityFailure {
 		for _, v := range values {
 			r.Ordinary = v.Status == "LIVE"
 		}
 	}
 	n, known := s.Nodes[candidate]
 	v, available := s.Available[candidate]
-	r.Candidate = s.BaseSafe() && known && available && n.Type == "TOKEN" && n.Identity == identity && n.Class == "SUPPORTED_VALID" && v.Status == "LIVE"
+	r.Candidate = !s.IntegrityFailure && known && available && n.Type == "TOKEN" && n.Identity == identity && n.Class == "SUPPORTED_VALID" && v.Status == "LIVE"
 	r.CandidateWarning = r.Candidate
 	if device != "" {
 		names := map[string]bool{}
@@ -302,7 +313,7 @@ func (s *State) Evaluate(identity, candidate, device string) Result {
 			}
 		}
 	}
-	if !s.BaseSafe() {
+	if s.IntegrityFailure {
 		r.Ordinary = false
 		r.Author = false
 		r.Candidate = false
