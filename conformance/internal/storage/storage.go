@@ -1,6 +1,7 @@
 // Package storage evaluates an observed filesystem environment for the v1
-// envelope family. It does not open host paths: a live adapter must obtain entry
-// kinds and bounded bytes from stable, no-follow handles before exposing Read.
+// envelope family. It does not open host paths: a live adapter must honor observed
+// entry kinds, bound reads, and handle ordinary churn conservatively. Hostile local
+// syscall-race immunity is optional under r14.
 package storage
 
 import (

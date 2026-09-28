@@ -9,7 +9,7 @@ Totipo is an encrypted, append-only, multi-device TOTP vault format designed for
 The current specification is:
 
 - **Totipo Vault Format v1**
-- design revision **r13**
+- design revision **r14**
 - moving pre-release-candidate conformance evidence
 
 The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
@@ -26,6 +26,10 @@ The current v1 design uses:
 - P-256 provenance separated from TOKEN state authority;
 - an informational, non-causal `AUTHOR_TIME`;
 - a frozen forward-compatible routing prefix so older clients can retain causal topology for future TOKEN/DEVICE versions without understanding their bodies.
+
+Totipo treats synchronized bytes/history as hostile; baseline v1 trusts the local
+OS/filesystem execution environment while requiring conservative handling of ordinary
+synchronization churn. Stronger hostile-local-filesystem race hardening is optional.
 
 A core availability principle is:
 
@@ -84,11 +88,14 @@ it is not a release or a frozen RC profile. Normal checks never regenerate cases
 
 See the [vector contract](vectors/FORMAT.md), [Go consumer](conformance/README.md),
 [r12 hardening report](review/V1_R12_HARDENING_REPORT.md),
-and [r13 hardening report](review/V1_R13_HARDENING_REPORT.md).
+[r13 hardening report](review/V1_R13_HARDENING_REPORT.md), and
+[r14 threat-model simplification report](review/V1_R14_THREAT_MODEL_SIMPLIFICATION_REPORT.md).
 
 ## Current next step
 
 Have the first live Totipo implementation independently consume the exact byte
 and semantic corpus, including fixed signature verification and future opaque
 routing. Complete platform persistence/crash and native P-256 interoperability
-evidence before freezing any v1 release-candidate profile.
+evidence, including ordinary synchronization churn and immutable no-overwrite
+publication, before freezing any v1 release-candidate profile. Hostile local syscall-race
+immunity is optional implementation hardening, not an RC blocker.

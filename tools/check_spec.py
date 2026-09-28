@@ -10,7 +10,7 @@ assert [int(n) for n in re.findall(r"^## (\d+)\.", s, re.M)] == list(range(1, 59
 for heading in [
     "## 54. Core invariants",
     "## 55. Required conformance evidence for v1",
-    "## 56. Open work after r13",
+    "## 56. Open work after r14",
     "## 57. v0 concepts intentionally absent from v1",
 ]:
     assert heading in norm, heading
@@ -40,6 +40,7 @@ assert "Migration creates a new v1 vault" not in norm
 assert re.search(r"^### v1/r12$", s.split("## 58. Revision history", 1)[1], re.M)
 
 assert re.search(r"^### v1/r13$", s.split("## 58. Revision history", 1)[1], re.M)
+assert "### v1/r14" in s
 assert "### v1/r11" in s
 
 # Presence checks deliberately do not interpret prose as executable rules.
@@ -73,8 +74,8 @@ for concept in [
     assert re.search(concept, norm, re.S), concept
 
 required = [
-    "**Revision:** r13",
-    "**Revision 13 summary:**",
+    "**Revision:** r14",
+    "**Revision 14 summary:**",
     "objects-v1/",
     "Every valid object in objects-v1/ is exactly 1024 bytes.",
     "OBJECT_VERSION versions semantics inside the v1 envelope family",
@@ -108,4 +109,4 @@ for x in [
 
 assert norm.count("| `0x0200` | `DEVICE_ID` |") == 1
 assert "Unrelated tokens continue normal ordinary use and authorship" in norm
-print("PASS: Totipo v1/r13 structural spec checks")
+print("PASS: Totipo v1/r14 structural spec checks")

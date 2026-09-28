@@ -1,7 +1,7 @@
 # Go v1 reference/conformance consumer
 
 This module supports Go 1.23 or later and is the single in-repository reference
-consumer for Totipo v1/r13. It is deliberately not a production client.
+consumer for Totipo v1/r14. It is deliberately not a production client.
 
 From the repository root:
 
@@ -48,9 +48,11 @@ semantic evidence. A read error or unsafe family directory is an error requiring
 incomplete discovery, not successful classification.
 
 This is a small reference environment evaluator, not a host-filesystem adapter.
-A live adapter must obtain entry kinds and bounded bytes through stable no-follow
-handles, prevent namespace rebinding/escape, and honor the returned errors. No
-production crash/persistence or filesystem-race guarantee is claimed here.
+A live adapter must honor observed entry types, bound reads, confine protocol paths
+to the configured logical namespace, and handle read failures and ordinary churn
+conservatively. Stable no-follow facilities are recommended where readily available;
+hostile same-privilege syscall-race immunity is optional under r14. This model does
+not establish live crash/persistence guarantees, which still need separate evidence.
 
 `OBJECT_VERSION` versions semantics within the fixed v1 family. `objects-v2/` is
 an illustrative separate family and is ignored. Rolling compatibility requires
