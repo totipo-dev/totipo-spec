@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Structural and semantic anchors for the current r16 specification.
+"""Structural and semantic anchors for the current r17 specification.
 
 Historical revision entries are deliberately excluded from retired-term checks.
 Wire correctness is exercised by the conformance corpus, not prose fingerprints.
@@ -10,8 +10,8 @@ import re
 s = Path('spec/totipo-vault-format-v1.md').read_text(encoding='utf-8')
 norm, history = s.split('## 21. Revision history', 1)
 assert [int(n) for n in re.findall(r'^## (\d+)\.', s, re.M)] == list(range(1, 22))
-assert '**Revision:** r16' in norm and '**Protocol version:** 1' in norm
-for n in range(1, 17):
+assert '**Revision:** r17' in norm and '**Protocol version:** 1' in norm
+for n in range(1, 18):
     assert f'### v1/r{n}\n' in history
 for term in ('DEVICE', 'DEVICE_ID', 'P-256', 'ECDSA', 'DER', 'SIGNATURE',
              'AUTHOR_DEVICE_ID', 'AUTHOR_TIME', 'PROVENANCE', 'OPAQUE_ROUTABLE',
@@ -69,4 +69,4 @@ assert 'no advisory-history, remembered-head, protocol-cache, or cross-run persi
 writing = ' '.join(fold.split())
 assert re.search(r'Unavailability of history alone MUST NOT prohibit authorship when the TOKEN_ID and complete desired TokenValue.*?known or supplied', writing)
 assert 'generate a new CSPRNG TOKEN_ID' in writing and 'empty parent set' in writing
-print('PASS: Totipo v1/r16 structural checks')
+print('PASS: Totipo v1/r17 structural checks')

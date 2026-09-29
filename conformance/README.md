@@ -1,4 +1,4 @@
-# Go v1/r16 reference/conformance consumer
+# Go v1/r17 reference/conformance consumer
 
 This Go 1.23+ module is the repository's reference consumer, not a production client.
 Run `make check`, `make race`, and `make fuzz` from the repository root. The CLI

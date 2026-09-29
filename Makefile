@@ -8,7 +8,7 @@ export GOCACHE ?= $(CURDIR)/.direnv/go-build
 .NOTPARALLEL: check
 
 help:
-	@printf '%s\n' 'make spec-check  Check the v1/r16 specification structure' 'make test        Run Go tests' 'make conformance Run all v1/r16 requirements' 'make verify      Verify manifest, files, and moving profile' 'make check       Run all required checks' 'make race        Run Go race tests' 'make fuzz        Run bounded parser fuzzing'
+	@printf '%s\n' 'make spec-check  Check the v1/r17 specification structure' 'make test        Run Go tests' 'make conformance Run all v1/r17 requirements' 'make verify      Verify manifest, files, and moving profile' 'make check       Run all required checks' 'make race        Run Go race tests' 'make fuzz        Run bounded parser fuzzing'
 
 spec-check:
 	$(PYTHON) tools/check_spec.py

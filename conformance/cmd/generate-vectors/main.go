@@ -1,4 +1,4 @@
-// Command generate-vectors explicitly regenerates r16 fixtures and moving pins.
+// Command generate-vectors explicitly regenerates r17 fixtures and moving pins.
 // It is never run by tests. Deterministic crypto fixtures use public test keys.
 package main
 
@@ -445,7 +445,7 @@ func main() {
 		workflow("vault."+x.name, vectors.Workflow{Action: "replace", Kind: "regular", Base: "01", Existing: x.current, Complete: true, Readable: x.readable, Durable: x.durable, Result: x.result})
 	}
 	sort.Slice(cases, func(i, j int) bool { return cases[i].ID < cases[j].ID })
-	manifest := vectors.Manifest{Format: "totipo-vector-manifest-v1", Protocol: "totipo-v1", Revision: "r16", Cases: []vectors.Entry{}}
+	manifest := vectors.Manifest{Format: "totipo-vector-manifest-v1", Protocol: "totipo-v1", Revision: "r17", Cases: []vectors.Entry{}}
 	keep := map[string]bool{}
 	for _, c := range cases {
 		category := strings.Split(c.ID, ".")[1]
@@ -499,10 +499,10 @@ func main() {
 		must(e)
 		return vectors.Hash(b)
 	}
-	profile := vectors.Profile{Format: "totipo-requirements-v1", Status: "moving-pre-rc", Protocol: "totipo-v1", Revision: "r16", SpecSHA256: hashFile("spec/totipo-vault-format-v1.md"), ManifestSHA256: hashFile("vectors/manifest.json"), SchemaSHA256: hashFile("vectors/manifest.schema.json"), CaseSchemaSHA256: hashFile("vectors/case.schema.json"), Required: []vectors.Pin{}}
+	profile := vectors.Profile{Format: "totipo-requirements-v1", Status: "moving-pre-rc", Protocol: "totipo-v1", Revision: "r17", SpecSHA256: hashFile("spec/totipo-vault-format-v1.md"), ManifestSHA256: hashFile("vectors/manifest.json"), SchemaSHA256: hashFile("vectors/manifest.schema.json"), CaseSchemaSHA256: hashFile("vectors/case.schema.json"), Required: []vectors.Pin{}}
 	for _, e := range manifest.Cases {
 		profile.Required = append(profile.Required, vectors.Pin{ID: e.ID, SHA256: e.SHA256})
 	}
 	write(filepath.Join(root, "requirements/v1-pre-rc.json"), profile)
-	fmt.Printf("Generated r16: %d cases\n", len(cases))
+	fmt.Printf("Generated r17: %d cases\n", len(cases))
 }

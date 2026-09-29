@@ -3,7 +3,7 @@
 Totipo is an encrypted, append-only TOTP vault format operating on a configured
 durable store. Synchronization is optional and external.
 
-The current normative specification is **v1/r16**, a design draft with moving
+The current normative specification is **v1/r17**, a design draft with moving
 pre-release-candidate conformance evidence:
 [Totipo Vault Format v1](spec/totipo-vault-format-v1.md).
 
@@ -15,12 +15,15 @@ across all stages of one fold, without requiring persistent remembered history. 
 observed state truthfully; known complete credentials remain available for TOTP
 computation regardless of lifecycle or historical status.
 
-A store contains canonical regular-file `vault` and directory `objects-v1/`. Only exact r16 TOKENs
+A store contains canonical regular-file `vault` and directory `objects-v1/`. Only exact v1 TOKENs
 contribute semantic state. Unknown sibling families are outside v1 interpretation;
 future families define their own compatibility relationships. The vault root
 provides authoring authority. VAULT_FINGERPRINT provides optional stable recognition.
 No per-client persistent graph database is required. Store loss or rollback can
-lose history; the protocol does not provide deletion or rollback resistance.
+lose history. Totipo validates and authenticates observed content, but does not
+cryptographically guarantee a complete or freshest store view. Stronger freshness,
+rollback detection, or history retention must be explicitly supplied by the
+storage environment or application; synchronization remains optional.
 
 | Path | Role |
 | --- | --- |
@@ -46,11 +49,13 @@ case hashes, physical case coverage, and exact requirements pins. Normal checks
 never regenerate fixtures. Make uses a writable Go cache under `.direnv/`.
 See the [case contract](vectors/FORMAT.md) and [Go consumer](conformance/README.md).
 
+The [r17 clarification report](review/V1_R17_HARDENING_REPORT.md) records the
+threat-model clarification and unchanged 90-case corpus.
 The [r16 rewrite report](review/V1_R16_REWRITE_REPORT.md) records the baseline,
 five checkpoint hashes, per-case migration, and validation. Older reports remain
 historical evidence. No release candidate is frozen by this rewrite.
 
-Next: repin/reconcile `totipo-java` against r16 and evaluate what existing
+Next: repin/reconcile `totipo-java` against r17 and evaluate what existing
 implementation architecture/code should be kept, changed, simplified, or deleted.
 An independent live implementation and platform durability evidence remain
 necessary before an RC freeze; this repository's model is not a production client.
