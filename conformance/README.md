@@ -1,49 +1,45 @@
-# Go v1/r15 reference/conformance consumer
+# Go v1/r16 reference/conformance consumer
 
-This Go 1.23+ module is the single in-repository reference consumer, not a production
-client. Run `make check`, `make race`, and `make fuzz` from the repository root.
-The CLI also accepts `-root /path/to/repository` and `-verify-only`.
+This Go 1.23+ module is the repository's reference consumer, not a production client.
+Run `make check`, `make race`, and `make fuzz` from the repository root. The CLI
+accepts `-root /path/to/repository` and `-verify-only`. Every manifest case is
+required; there is no optional capability selection.
 
-`make conformance` executes the 93 baseline requirements with advisory history
-support disabled. `make conformance-all` executes baseline plus the 12 conditional
-cases using the reference model's explicit `ReferenceCapabilities` declaration.
-For example, `go run ./conformance/cmd/totipo-conformance -root . -capability advisory-history`
-reports baseline and `capability=advisory-history` results separately. Unknown
-capability names reject. The complete manifest has 105 schema-valid, hash-pinned
-cases; `make check` tests both selections. Downstream implementations without an
-advisory-history feature need only baseline; they need not retain cross-run graph
-history or emit HISTORY_MEMORY_LOST merely because no feature exists. Capability
-selection is a conformance concept, not wire negotiation.
+Packages separate TLV framing, exact TOKEN grammar, object/root cryptography,
+TOTP computation, causal-equivalence graph evaluation, and storage outcomes.
+Storage bytes pass physical-size, AEAD, semantic-length, zero-padding, and keyed-ID
+checks before grammar validation. Required post-AEAD negative fixtures prove that
+authentication alone cannot bypass length, padding, or keyed-ID checks. Invalid grammar contributes no TOKEN state.
 
-Packages separate unchanged TLV, crypto, object parsing, and TOTP from snapshot
-graph interpretation and vector IO. External bytes pass `cryptov1.Keys.Open`
-before dispatch. Invalid supported bodies never become future/opaque evidence.
+`graph.Store` models a supplied valid observed set, not persistent security memory.
+It uses cycle-safe reachability to compute all members of maximal SCCs. Missing
+parents remain unresolved. Head records and retained historical nodes preserve exact
+client metadata independently of the semantic-value projection for as long as
+the object is represented; this creates no persistent history obligation. Fold construction
+copies one operation’s complete value and exact metadata into every stage. Values
+in graph vectors are symbolic complete tuples;
+real TokenValue extraction is tested against canonical objects. Defensive same-ID
+failure excludes that identity from the model without poisoning unrelated tokens.
+The model is deliberately small, not a scalable graph-index implementation.
 
-`graph.State` contains one explicitly supplied accepted observation. `Snapshot`
-copies planning evidence; `Plan` chooses exact parents from it. Later observations
-do not stale ordinary publication. Confirmed conflict decisions track exact TOKEN
-heads, complete values, desired value, and intent. TOKEN-relevant changes learned
-before publication require reconfirmation; unrelated events do not.
+`internal/storage` models exact namespaces, candidate names, observation diagnostics,
+immutable publication, initial VAULT creation, and exact compare-before-replace.
+Observed bootstrap entries must be regular files and object namespaces directories;
+wrong types are not followed or traversed. Backend booleans describe trusted API outcomes. They do not prove file/namespace
+persistence, staging behavior, host syscall races, or remote completeness. A live
+adapter must implement the specification's durability and truthful reporting rules.
 
-When the advisory-history capability is selected, remembered IDs only derive diagnostics and cannot add nodes/edges/values.
-Disappearance removes current evidence in a subsequent observation. `author` means
-ordinary authorship eligibility (including empty new-token state), while
-`requires_confirmation` identifies a visible supported conflict. Cache health,
-incomplete discovery, and unscoped evidence are warnings, not global gates.
+Tests never regenerate fixtures. For an intentional reviewed protocol update:
 
-`internal/storage` evaluates exact namespace, filename, ordinary-file, bounded
-reader, and cryptographic obligations. It also models complete/no-overwrite local
-publication and binding establishment. These abstract API outcomes do not prove
-physical crash durability or hidden remote completeness. Go race testing remains
-useful for implementation data races, not synchronized transaction claims.
+```sh
+go run ./conformance/cmd/generate-vectors -root .
+make verify
+make conformance
+```
 
-The first DEVICE workflow requires matching valid self-signed advertisement and
-TOKEN publication acknowledgements. Optional caches are independent. Provenance
-re-evaluation changes attribution without changing TOKEN values or causality.
-
-Tests never regenerate crypto fixtures. The obsolete monolithic r14 generator was
-removed because it encoded the retired state model; fixed byte fixtures remain
-committed and independently pinned. See [FORMAT.md](../vectors/FORMAT.md) for the
-strict language-neutral contract and [r15 review](../review/V1_R15_STATE_MODEL_SIMPLIFICATION_REPORT.md)
-for every semantic delta. An independent live implementation is still required
-before RC freeze. No downstream implementation is modified here.
+The generator constructs deterministic TOKEN bytes using public test roots and
+preserves the independent RFC TOTP answers. Semantic graph/workflow expectations
+are specified explicitly, not queried from the evaluator. Review the diff and
+pins; independent interoperability remains necessary before RC freeze.
+See the [case contract](../vectors/FORMAT.md) and
+[r16 rewrite report](../review/V1_R16_REWRITE_REPORT.md).

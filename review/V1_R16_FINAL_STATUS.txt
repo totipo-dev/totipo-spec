@@ -1,0 +1,196 @@
+ M CONTRIBUTING.md
+ M Makefile
+ M README.md
+ M conformance/README.md
+ M conformance/cmd/totipo-conformance/main.go
+ M conformance/internal/cryptov1/crypto.go
+ M conformance/internal/cryptov1/crypto_test.go
+ D conformance/internal/graph/authorship.go
+ M conformance/internal/graph/graph.go
+ M conformance/internal/graph/graph_test.go
+ D conformance/internal/graph/provenance.go
+ D conformance/internal/graph/provenance_test.go
+ D conformance/internal/graph/publication.go
+ D conformance/internal/graph/recovery.go
+ M conformance/internal/object/object.go
+ M conformance/internal/object/object_test.go
+ M conformance/internal/storage/publication.go
+ M conformance/internal/storage/storage.go
+ M conformance/internal/storage/storage_test.go
+ M conformance/internal/totp/totp.go
+ D conformance/internal/vectors/applicability.go
+ D conformance/internal/vectors/hardening.go
+ D conformance/internal/vectors/local.go
+ D conformance/internal/vectors/recovery.go
+ M conformance/internal/vectors/runner.go
+ M conformance/internal/vectors/runner_test.go
+ D conformance/internal/vectors/storage.go
+ M conformance/internal/vectors/types.go
+ M requirements/README.md
+ M requirements/v1-pre-rc.json
+ M spec/totipo-vault-format-v1.md
+ M tools/check_spec.py
+ M tools/test_check_vectors.py
+ M vectors/FORMAT.md
+ M vectors/README.md
+ M vectors/case.schema.json
+ M vectors/cases/bootstrap/v1.bootstrap.ascii.001.json
+ M vectors/cases/bootstrap/v1.bootstrap.empty.001.json
+ D vectors/cases/bootstrap/v1.bootstrap.local-binding-establishment.001.json
+ M vectors/cases/bootstrap/v1.bootstrap.unicode.001.json
+ D vectors/cases/candidate/v1.candidate.cache-write-warning.001.json
+ D vectors/cases/candidate/v1.candidate.conflict-a.001.json
+ D vectors/cases/candidate/v1.candidate.current-peer-missing.001.json
+ D vectors/cases/candidate/v1.candidate.discovery-incomplete.001.json
+ D vectors/cases/candidate/v1.candidate.historical-current-missing.001.json
+ D vectors/cases/candidate/v1.candidate.history-memory-lost.001.json
+ D vectors/cases/candidate/v1.candidate.opaque-current.001.json
+ D vectors/cases/confirmation/v1.confirmation.relevant-change.001.json
+ D vectors/cases/confirmation/v1.confirmation.relevant-information-return.001.json
+ D vectors/cases/confirmation/v1.confirmation.unrelated-change.001.json
+ D vectors/cases/confirmation/v1.confirmation.visible-conflict.001.json
+ D vectors/cases/crypto/v1.crypto.device-root.001.json
+ D vectors/cases/crypto/v1.crypto.future-device-opaque.001.json
+ D vectors/cases/crypto/v1.crypto.future-token-opaque.001.json
+ M vectors/cases/crypto/v1.crypto.token-child.001.json
+ M vectors/cases/crypto/v1.crypto.token-root.001.json
+ D vectors/cases/device/v1.device.explicit-id.001.json
+ D vectors/cases/device/v1.device.id-mismatch.001.json
+ D vectors/cases/device/v1.device.rename-incorporates-rejected-head.001.json
+ D vectors/cases/encoding/v1.encoding.author-time-u64max.001.json
+ D vectors/cases/encoding/v1.encoding.author-time-zero.001.json
+ D vectors/cases/encoding/v1.encoding.device-root.001.json
+ M vectors/cases/encoding/v1.encoding.duplicate-nonrepeatable.001.json
+ M vectors/cases/encoding/v1.encoding.parent-count-mismatch.001.json
+ M vectors/cases/encoding/v1.encoding.parent-order.001.json
+ M vectors/cases/encoding/v1.encoding.token-root.001.json
+ M vectors/cases/encoding/v1.encoding.utf8-boundary.001.json
+ D vectors/cases/future/v1.future.concurrent-supported-opaque.001.json
+ D vectors/cases/future/v1.future.device-presentation.001.json
+ D vectors/cases/future/v1.future.disappearance-removes-current.001.json
+ D vectors/cases/future/v1.future.family-compat-shadow.001.json
+ D vectors/cases/future/v1.future.family-no-shadow.001.json
+ D vectors/cases/future/v1.future.scoped-token.001.json
+ D vectors/cases/future/v1.future.supported-descendant.001.json
+ D vectors/cases/future/v1.future.unrelated-token.001.json
+ D vectors/cases/future/v1.future.unscoped-candidate-use.001.json
+ D vectors/cases/future/v1.future.unscoped-warning.001.json
+ D vectors/cases/future/v1.future.version-does-not-order.001.json
+ M vectors/cases/graph/v1.graph.conflicting-concurrent.001.json
+ D vectors/cases/graph/v1.graph.corrupt-current-bytes-excluded.001.json
+ D vectors/cases/graph/v1.graph.cycle-integrity-failure.001.json
+ M vectors/cases/graph/v1.graph.equal-concurrent.001.json
+ D vectors/cases/graph/v1.graph.global-object-id-conflict.001.json
+ D vectors/cases/graph/v1.graph.history-cache-corrupt.001.json
+ M vectors/cases/graph/v1.graph.intermediate-disappears.001.json
+ D vectors/cases/graph/v1.graph.known-id-corrupt-bytes-warning.001.json
+ M vectors/cases/graph/v1.graph.late-parent.001.json
+ D vectors/cases/graph/v1.graph.reappearance-mismatch.001.json
+ M vectors/cases/graph/v1.graph.reappearance.001.json
+ D vectors/cases/graph/v1.graph.remembered-head-absent.001.json
+ M vectors/cases/graph/v1.graph.sequential.001.json
+ M vectors/cases/graph/v1.graph.wrong-identity-parent.001.json
+ D vectors/cases/history/v1.history.cache-failure-after-publication-warning.001.json
+ D vectors/cases/history/v1.history.current-child-missing-warning.001.json
+ D vectors/cases/history/v1.history.current-peer-missing-warning.001.json
+ D vectors/cases/history/v1.history.memory-lost.001.json
+ D vectors/cases/history/v1.history.opaque-disappearance-warning.001.json
+ D vectors/cases/history/v1.history.regression-and-return.001.json
+ D vectors/cases/history/v1.history.unscoped-disappearance-warning.001.json
+ D vectors/cases/provenance/v1.provenance.der-max-valid.001.json
+ D vectors/cases/provenance/v1.provenance.der-short-valid.001.json
+ D vectors/cases/provenance/v1.provenance.initial-device-before-token.001.json
+ D vectors/cases/provenance/v1.provenance.late-device-reclassify.001.json
+ D vectors/cases/provenance/v1.provenance.signature-context-cross-vault.001.json
+ D vectors/cases/provenance/v1.provenance.token-rejected.001.json
+ D vectors/cases/provenance/v1.provenance.token-unresolved.001.json
+ D vectors/cases/provenance/v1.provenance.token-verified.001.json
+ D vectors/cases/publication/v1.publication.ambiguous-retry-sibling.001.json
+ D vectors/cases/publication/v1.publication.cache-failure-after-success.001.json
+ D vectors/cases/routing/v1.routing.device-future-opaque.001.json
+ D vectors/cases/routing/v1.routing.device-v1.001.json
+ D vectors/cases/routing/v1.routing.future-device-malformed-prefix.001.json
+ D vectors/cases/routing/v1.routing.future-token-malformed-prefix.001.json
+ D vectors/cases/routing/v1.routing.token-future-opaque.001.json
+ D vectors/cases/routing/v1.routing.token-v1.001.json
+ D vectors/cases/routing/v1.routing.unknown-type-unscoped.001.json
+ D vectors/cases/size/v1.size.device-max-14.001.json
+ D vectors/cases/size/v1.size.device-max-15-fold.001.json
+ D vectors/cases/size/v1.size.short-der-no-extra-parent.001.json
+ M vectors/cases/size/v1.size.token-max-4.001.json
+ D vectors/cases/size/v1.size.token-max-5-fold.001.json
+ D vectors/cases/snapshot/v1.snapshot.hidden-history-after-publication.001.json
+ D vectors/cases/snapshot/v1.snapshot.incomplete-usable.001.json
+ D vectors/cases/snapshot/v1.snapshot.late-arrival-before-publication.001.json
+ D vectors/cases/snapshot/v1.snapshot.no-advisory-history.001.json
+ D vectors/cases/snapshot/v1.snapshot.opaque-token-plan-blocked.001.json
+ D vectors/cases/snapshot/v1.snapshot.unrelated-change.001.json
+ M vectors/cases/storage/v1.storage.exact-existing-publication.001.json
+ M vectors/cases/storage/v1.storage.nonobject-name-ignored.001.json
+ M vectors/cases/storage/v1.storage.objects-v1.001.json
+ M vectors/cases/storage/v1.storage.unknown-sibling-ignored.001.json
+ D vectors/cases/storage/v1.storage.wrong-size-not-opaque.001.json
+ D vectors/cases/timestamp/v1.timestamp.equal-value-different-times.001.json
+ D vectors/cases/timestamp/v1.timestamp.fold-common-time.001.json
+ D vectors/cases/timestamp/v1.timestamp.i64max.001.json
+ D vectors/cases/timestamp/v1.timestamp.normal.001.json
+ D vectors/cases/timestamp/v1.timestamp.u64max.001.json
+ D vectors/cases/timestamp/v1.timestamp.zero.001.json
+ M vectors/manifest.json
+ M vectors/manifest.schema.json
+?? conformance/cmd/generate-vectors/
+?? conformance/internal/vectors/integration_test.go
+?? conformance/internal/vectors/post_aead.go
+?? review/V1_R16_CASE_AUDIT.json
+?? review/V1_R16_ENVELOPE_DECISION.md
+?? review/V1_R16_FINAL_STATUS.txt
+?? review/V1_R16_REWRITE_REPORT.md
+?? tools/audit_r16.py
+?? tools/test_r16_vectors.py
+?? vectors/cases/bootstrap/v1.bootstrap.rewrap.001.json
+?? vectors/cases/crypto/v1.crypto.nonzero-padding.001.json
+?? vectors/cases/crypto/v1.crypto.object-id-mismatch.001.json
+?? vectors/cases/crypto/v1.crypto.semantic-length-invalid.001.json
+?? vectors/cases/encoding/v1.encoding.account-too-long.001.json
+?? vectors/cases/encoding/v1.encoding.algorithm-range.001.json
+?? vectors/cases/encoding/v1.encoding.client-name-invalid-utf8.001.json
+?? vectors/cases/encoding/v1.encoding.client-name-too-long.001.json
+?? vectors/cases/encoding/v1.encoding.client-time-width.001.json
+?? vectors/cases/encoding/v1.encoding.complete-tombstone.001.json
+?? vectors/cases/encoding/v1.encoding.digits-range.001.json
+?? vectors/cases/encoding/v1.encoding.five-parents.001.json
+?? vectors/cases/encoding/v1.encoding.identity-width.001.json
+?? vectors/cases/encoding/v1.encoding.issuer-invalid-utf8.001.json
+?? vectors/cases/encoding/v1.encoding.issuer-too-long.001.json
+?? vectors/cases/encoding/v1.encoding.metadata-order.001.json
+?? vectors/cases/encoding/v1.encoding.missing-secret.001.json
+?? vectors/cases/encoding/v1.encoding.non-token-plaintext.001.json
+?? vectors/cases/encoding/v1.encoding.parent-duplicate.001.json
+?? vectors/cases/encoding/v1.encoding.parents-1.001.json
+?? vectors/cases/encoding/v1.encoding.parents-2.001.json
+?? vectors/cases/encoding/v1.encoding.parents-3.001.json
+?? vectors/cases/encoding/v1.encoding.parents-4.001.json
+?? vectors/cases/encoding/v1.encoding.period-zero.001.json
+?? vectors/cases/encoding/v1.encoding.secret-empty.001.json
+?? vectors/cases/encoding/v1.encoding.secret-too-long.001.json
+?? vectors/cases/encoding/v1.encoding.status-range.001.json
+?? vectors/cases/encoding/v1.encoding.trailing-byte.001.json
+?? vectors/cases/encoding/v1.encoding.unknown-field.001.json
+?? vectors/cases/fold/
+?? vectors/cases/graph/v1.graph.cycle-conflicting.001.json
+?? vectors/cases/graph/v1.graph.cycle-equal.001.json
+?? vectors/cases/graph/v1.graph.identical-collapse.001.json
+?? vectors/cases/graph/v1.graph.late-cycle.001.json
+?? vectors/cases/graph/v1.graph.same-id-defensive.001.json
+?? vectors/cases/graph/v1.graph.self-cycle.001.json
+?? vectors/cases/metadata/
+?? vectors/cases/storage/v1.storage.ambiguous-publication.001.json
+?? vectors/cases/storage/v1.storage.failed-aead.001.json
+?? vectors/cases/storage/v1.storage.incomplete-diagnostics.001.json
+?? vectors/cases/storage/v1.storage.invalid-grammar.001.json
+?? vectors/cases/storage/v1.storage.missing-parent-publication.001.json
+?? vectors/cases/storage/v1.storage.new-publication.001.json
+?? vectors/cases/storage/v1.storage.non-exact-publication.001.json
+?? vectors/cases/storage/v1.storage.unreadable-target.001.json
+?? vectors/cases/storage/v1.storage.wrong-size.001.json
+?? vectors/cases/vault/

@@ -1,4 +1,4 @@
-// Package vectors defines and consumes the language-neutral JSON case format.
+// Package vectors consumes the language-neutral r16 corpus.
 package vectors
 
 import (
@@ -7,15 +7,14 @@ import (
 )
 
 type Entry struct {
-	Applicability Applicability `json:"applicability"`
-	ID            string        `json:"id"`
-	Category      string        `json:"category"`
-	Kind          string        `json:"kind"`
-	Normative     bool          `json:"normative"`
-	Path          string        `json:"path"`
-	Expected      string        `json:"expected"`
-	Sections      []string      `json:"spec_sections"`
-	SHA256        string        `json:"sha256"`
+	ID        string   `json:"id"`
+	Category  string   `json:"category"`
+	Kind      string   `json:"kind"`
+	Normative bool     `json:"normative"`
+	Path      string   `json:"path"`
+	Expected  string   `json:"expected"`
+	Sections  []string `json:"spec_sections"`
+	SHA256    string   `json:"sha256"`
 }
 type Manifest struct {
 	Format   string  `json:"format"`
@@ -38,6 +37,46 @@ type Pin struct {
 	ID     string `json:"id"`
 	SHA256 string `json:"sha256"`
 }
+type Case struct {
+	Format    string         `json:"format"`
+	ID        string         `json:"id"`
+	Operation string         `json:"operation"`
+	Expected  string         `json:"expected"`
+	Notes     string         `json:"notes,omitempty"`
+	Input     *object.Object `json:"input,omitempty"`
+	Semantic  string         `json:"semantic_hex,omitempty"`
+	Root      string         `json:"root_hex,omitempty"`
+	PostAEAD  *PostAEAD      `json:"post_aead,omitempty"`
+	Crypto    *Crypto        `json:"crypto,omitempty"`
+	Bootstrap *Bootstrap     `json:"bootstrap,omitempty"`
+	TOTP      *TOTP          `json:"totp,omitempty"`
+	Graph     *GraphCase     `json:"graph,omitempty"`
+	Fold      *FoldCase      `json:"fold,omitempty"`
+	Storage   *StorageCase   `json:"storage,omitempty"`
+	Workflow  *Workflow      `json:"workflow,omitempty"`
+}
+type Crypto struct {
+	ObjectID       string `json:"object_id"`
+	IDKey          string `json:"id_key_hex"`
+	ObjectRootKey  string `json:"object_root_key_hex"`
+	ObjectKey      string `json:"object_key_hex"`
+	Nonce          string `json:"nonce_hex"`
+	AAD            string `json:"aad_hex"`
+	SemanticLength int    `json:"semantic_length"`
+	Padded         string `json:"padded_plaintext_hex"`
+	Ciphertext     string `json:"ciphertext_hex"`
+	Tag            string `json:"gcm_tag_hex"`
+	Object         string `json:"object_hex"`
+}
+type Bootstrap struct {
+	Password    string `json:"password_hex"`
+	Salt        string `json:"salt_hex"`
+	Nonce       string `json:"nonce_hex"`
+	WrapKey     string `json:"wrap_key_hex"`
+	Header      string `json:"header_hex"`
+	Record      string `json:"record_hex"`
+	Fingerprint string `json:"fingerprint_hex"`
+}
 type TOTP struct {
 	Source    string    `json:"source"`
 	Notes     string    `json:"notes"`
@@ -54,142 +93,54 @@ type TOTPRow struct {
 	CounterHex  string `json:"counter_hex"`
 	Code        string `json:"code"`
 }
-type StorageEntry struct {
-	Path    string `json:"path"`
-	Kind    string `json:"kind"`
-	Fixture string `json:"fixture_case,omitempty"`
-	Data    string `json:"data_hex,omitempty"`
-	Size    int    `json:"zero_bytes,omitempty"`
-}
-type StorageObservation struct {
-	Path  string `json:"path"`
-	Class string `json:"class"`
-}
-type StorageExpected struct {
-	Observations []StorageObservation `json:"observations"`
-	Learned      []string             `json:"learned_ids"`
-	Unscoped     []string             `json:"opaque_unscoped_ids"`
-	IntegrityOK  bool                 `json:"integrity_ok"`
-	View         graph.Result         `json:"view"`
-}
-type StorageCase struct {
-	Notes         string          `json:"notes"`
-	Root          string          `json:"root_hex"`
-	NamespaceKind string          `json:"namespace_kind"`
-	Entries       []StorageEntry  `json:"entries"`
-	Query         Query           `json:"query"`
-	Want          StorageExpected `json:"expect"`
-}
-type Case struct {
-	Local          *LocalCase            `json:"local,omitempty"`
-	LateProvenance *LateProvenanceCase   `json:"late_provenance,omitempty"`
-	Context        *SignatureContextCase `json:"signature_context,omitempty"`
-	Publication    *PublicationCase      `json:"publication,omitempty"`
-	Storage        *StorageCase          `json:"storage,omitempty"`
-	fixtures       map[string]Case
-	TOTP           *TOTP          `json:"totp,omitempty"`
-	Format         string         `json:"format"`
-	ID             string         `json:"id"`
-	Operation      string         `json:"operation"`
-	Expected       string         `json:"expected"`
-	Input          *object.Object `json:"input,omitempty"`
-	Semantic       string         `json:"semantic_hex,omitempty"`
-	Root           string         `json:"root_hex,omitempty"`
-	PublicKey      string         `json:"public_key_hex,omitempty"`
-	Crypto         *Crypto        `json:"crypto,omitempty"`
-	Future         *Future        `json:"future,omitempty"`
-	Size           *Size          `json:"size,omitempty"`
-	Bootstrap      *Bootstrap     `json:"bootstrap,omitempty"`
-	Graph          *GraphCase     `json:"graph,omitempty"`
-}
-type Future struct {
-	Routing object.Routing `json:"routing"`
-	Tail    string         `json:"opaque_tail_hex"`
-}
-
-type Crypto struct {
-	PrivateKey       string `json:"fixture_private_key_hex,omitempty"`
-	PublicKey        string `json:"fixture_public_key_hex,omitempty"`
-	Unsigned         string `json:"unsigned_semantic_hex,omitempty"`
-	SignatureInput   string `json:"signature_input_hex,omitempty"`
-	Signature        string `json:"signature_der_hex,omitempty"`
-	ObjectID         string `json:"object_id"`
-	IDKey            string `json:"id_key_hex"`
-	ObjectRootKey    string `json:"object_root_key_hex"`
-	SignatureContext string `json:"signature_context_hex"`
-	ObjectKey        string `json:"object_key_hex"`
-	Nonce            string `json:"nonce_hex"`
-	AAD              string `json:"aad_hex"`
-	SemanticLength   int    `json:"semantic_length"`
-	Padded           string `json:"padded_plaintext_hex"`
-	Ciphertext       string `json:"ciphertext_hex"`
-	Tag              string `json:"gcm_tag_hex"`
-	Object           string `json:"object_hex"`
-}
-type Size struct {
-	Reserved int  `json:"reserved_bytes"`
-	FanIn    int  `json:"fan_in"`
-	Fits     bool `json:"fits"`
-}
-type Bootstrap struct {
-	Password string `json:"password_hex"`
-	Salt     string `json:"salt_hex"`
-	Nonce    string `json:"nonce_hex"`
-	WrapKey  string `json:"wrap_key_hex"`
-	Header   string `json:"header_hex"`
-	Record   string `json:"record_hex"`
-	Binding  string `json:"binding_hex"`
-}
 type GraphCase struct {
-	Notes string `json:"notes,omitempty"`
 	Steps []Step `json:"steps"`
 }
-type Query struct {
-	Identity  string `json:"identity"`
-	Candidate string `json:"candidate"`
-	Device    string `json:"device,omitempty"`
-}
 type Step struct {
-	Intent         string         `json:"intent,omitempty"`
-	Parents        []string       `json:"parents,omitempty"`
-	StateWant      *StateExpected `json:"state_expect,omitempty"`
-	Success        *bool          `json:"success,omitempty"`
-	Reason         string         `json:"reason,omitempty"`
-	Action         string         `json:"action"`
-	Node           *graph.Node    `json:"node,omitempty"`
-	Value          *graph.Value   `json:"value,omitempty"`
-	ID             string         `json:"id,omitempty"`
-	Flag           bool           `json:"flag,omitempty"`
-	Query          *Query         `json:"query,omitempty"`
-	Want           *graph.Result  `json:"expect,omitempty"`
-	IntegrityError bool           `json:"integrity_error,omitempty"`
+	Action         string        `json:"action"`
+	Node           *graph.Node   `json:"node,omitempty"`
+	ID             string        `json:"id,omitempty"`
+	Identity       string        `json:"identity,omitempty"`
+	Want           *graph.Result `json:"expect,omitempty"`
+	IntegrityError bool          `json:"integrity_error,omitempty"`
+}
+type FoldCase struct {
+	Token    object.Object `json:"token"`
+	Frontier []string      `json:"frontier"`
+	StageIDs []string      `json:"stage_ids"`
+	Parents  [][]string    `json:"parents"`
+}
+type StorageEntry struct {
+	Path       string `json:"path"`
+	Kind       string `json:"kind"`
+	Object     string `json:"object_hex,omitempty"`
+	Unreadable bool   `json:"unreadable,omitempty"`
+}
+type StorageCase struct {
+	NamespaceKind string         `json:"namespace_kind"`
+	Entries       []StorageEntry `json:"entries"`
+	Classes       []string       `json:"classes"`
+	Diagnostics   bool           `json:"diagnostics"`
+}
+type Workflow struct {
+	Action           string `json:"action"`
+	Kind             string `json:"kind"`
+	Existing         string `json:"existing_hex"`
+	Intended         string `json:"intended_hex"`
+	Base             string `json:"base_hex"`
+	Readable         bool   `json:"readable"`
+	Complete         bool   `json:"complete"`
+	Durable          bool   `json:"durable"`
+	OrphanObjects    bool   `json:"orphan_objects"`
+	ParentsAvailable bool   `json:"parents_available"`
+	Result           string `json:"result"`
 }
 
-// StateExpected exposes accepted topology separately from presentation.
-type StateExpected struct {
-	Known       []string `json:"known"`
-	DeviceHeads []string `json:"device_heads"`
-	Parents     []string `json:"parents"`
-	IntegrityOK bool     `json:"integrity_ok"`
-}
-type SignatureContextCase struct {
-	A        string `json:"context_a_hex"`
-	B        string `json:"context_b_hex"`
-	Unsigned string `json:"unsigned_semantic_hex"`
-	UnderA   string `json:"under_a"`
-	UnderB   string `json:"under_b"`
-}
-type PublicationCase struct {
-	DeviceID  string             `json:"device_id"`
-	PublicKey string             `json:"public_key"`
-	Events    []PublicationEvent `json:"events"`
-}
-type PublicationEvent struct {
-	Action       string `json:"action"`
-	DeviceID     string `json:"device_id,omitempty"`
-	PublicKey    string `json:"public_key,omitempty"`
-	Valid        bool   `json:"assertion_valid,omitempty"`
-	Verified     bool   `json:"verified,omitempty"`
-	Acknowledged bool   `json:"acknowledged,omitempty"`
-	Success      *bool  `json:"success,omitempty"`
+// PostAEAD contains an intentionally malformed but genuinely authenticated
+// encryption plaintext. Defect identifies the single failed envelope boundary.
+type PostAEAD struct {
+	ObjectID  string `json:"object_id"`
+	Plaintext string `json:"encryption_plaintext_hex"`
+	Object    string `json:"object_hex"`
+	Defect    string `json:"defect"`
 }

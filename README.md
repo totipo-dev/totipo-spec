@@ -1,106 +1,56 @@
 # Totipo
 
-Totipo is an encrypted, append-only, multi-device TOTP vault format designed for synchronization over untrusted storage.
+Totipo is an encrypted, append-only TOTP vault format operating on a configured
+durable store. Synchronization is optional and external.
 
-## Current protocol work
+The current normative specification is **v1/r16**, a design draft with moving
+pre-release-candidate conformance evidence:
+[Totipo Vault Format v1](spec/totipo-vault-format-v1.md).
 
-`main` is the working tree for the current Totipo protocol design.
+The design uses complete-state TOKEN assertions, fixed 1024-byte encrypted objects,
+keyed content addressing, a maximum of four explicit parents, and whole-state
+conflicts. Cycles form causal-equivalence groups. Optional CLIENT_NAME and CLIENT_TIME
+are informational and preserved exactly while each object is represented and
+across all stages of one fold, without requiring persistent remembered history. Tombstones retain the full credential. Applications describe
+observed state truthfully; known complete credentials remain available for TOTP
+computation regardless of lifecycle or historical status.
 
-The current specification is:
-
-- **Totipo Vault Format v1**
-- design revision **r15**
-- moving pre-release-candidate conformance evidence
-
-The normative protocol text is [`spec/totipo-vault-format-v1.md`](spec/totipo-vault-format-v1.md).
-
-Authenticated immutable objects over unreliable sync; local history is advisory; vault identity remains strongly pinned locally. Advisory remembered history is optional. Baseline v1/r15 conformance does not require retaining history across runs; implementing it improves regression detection only.
-
-## Design direction
-
-The current v1 design uses:
-
-- immutable 1024-byte encrypted semantic objects;
-- complete-state `TOKEN` assertions rather than field-level deltas;
-- causal graphs derived from accepted authenticated snapshots;
-- whole-state conflict handling;
-- explicit candidate credential use when certainty is degraded;
-- P-256 provenance separated from TOKEN state authority;
-- an informational, non-causal `AUTHOR_TIME`;
-- a frozen forward-compatible routing prefix so older clients can retain causal topology for future TOKEN/DEVICE versions without understanding their bodies.
-
-Totipo treats synchronized bytes/history as hostile; baseline v1 trusts the local
-OS/filesystem execution environment while requiring conservative handling of ordinary
-synchronization churn. Stronger hostile-local-filesystem race hardening is optional.
-
-A core availability principle is:
-
-> Loss of semantic certainty should normally degrade capability rather than make authenticated candidate material unusable.
-
-## Envelope-family discovery
-
-`objects-v1/` is the exact v1 envelope/storage-family namespace. `OBJECT_VERSION`
-versions semantic content inside that fixed 1024-byte family. Unknown sibling
-namespace names are not authenticated future-version evidence. A name such as
-`objects-v2/` is illustrative; v1 does not parse that family's contents.
-
-A future family claiming rolling compatibility publishes authenticated
-compatibility assertions into `objects-v1/`. Old clients learn the semantic effect
-only from that projection, using the existing supported/opaque routing rules.
-
-## Repository map
+A store contains canonical regular-file `vault` and directory `objects-v1/`. Only exact r16 TOKENs
+contribute semantic state. Unknown sibling families are outside v1 interpretation;
+future families define their own compatibility relationships. The vault root
+provides authoring authority. VAULT_FINGERPRINT provides optional stable recognition.
+No per-client persistent graph database is required. Store loss or rollback can
+lose history; the protocol does not provide deletion or rollback resistance.
 
 | Path | Role |
-|---|---|
-| `spec/` | Normative current protocol text |
-| `vectors/` | Language-neutral current-protocol byte and semantic conformance vectors |
-| `requirements/` | Moving and later frozen conformance profiles |
-| `conformance/` | Go reference/conformance consumer; not production code |
-| `review/` | Current-protocol design, consistency, adversarial, and simplification evidence |
-| `tools/` | Repository/vector/spec verification tooling |
+| --- | --- |
+| `spec/` | Current normative protocol |
+| `vectors/` | Exact byte, negative, graph, fold, and storage workflow cases |
+| `requirements/` | Moving pre-RC pins |
+| `conformance/` | Go reference consumer and explicit fixture generator |
+| `review/` | Historical decisions and review evidence |
+| `tools/` | Structural and schema checks |
 
-## Implementation evidence
-
-The repository needs only one in-repo reference/conformance consumer: Go.
-
-The first real Totipo implementation developed against the frozen vectors should act as the independent interoperability consumer before a v1 release candidate is frozen. There is no requirement to build a second throwaway reference implementation.
-
-## Development and checks
-
-Use the preserved Nix development environment (`nix develop`, or direnv with the
-existing `.envrc`). It supplies Go, Make, Python, and the existing Go tooling.
-The Go module supports Go 1.23 or later; the schema checker uses Python 3.9 or later.
+Use `nix develop` or the existing direnv setup when available. Go 1.23+ and Python
+3.9+ are supported. Run:
 
 ```sh
-make spec-check
-make test
-make conformance       # baseline
-make conformance-all   # baseline + advisory-history
-make verify
 make check
+make race
+make fuzz
+go -C conformance vet ./...
 ```
 
-`make race` and `make fuzz` provide additional checks. Make uses a writable Go
-build cache under `.direnv/` for the jailed development environment. When running
-Go directly there, set `GOCACHE="$PWD/.direnv/go-build"` from the repository root.
-The module tests run with `go -C conformance test ./...`.
+`make conformance` executes every manifest case. `make verify` checks schemas,
+case hashes, physical case coverage, and exact requirements pins. Normal checks
+never regenerate fixtures. Make uses a writable Go cache under `.direnv/`.
+See the [case contract](vectors/FORMAT.md) and [Go consumer](conformance/README.md).
 
-The [manifest](vectors/manifest.json) contains 105 cases: 93 baseline and 12
-conditional `advisory-history` cases. The [moving pre-RC baseline profile](requirements/v1-pre-rc.json)
-pins only the 93 baseline IDs/hashes; the manifest pins every conditional case too.
-it is not a release or a frozen RC profile. Normal checks never regenerate cases.
+The [r16 rewrite report](review/V1_R16_REWRITE_REPORT.md) records the baseline,
+five checkpoint hashes, per-case migration, and validation. Older reports remain
+historical evidence. No release candidate is frozen by this rewrite.
 
-See the [vector contract](vectors/FORMAT.md), [Go consumer](conformance/README.md),
-[r12 hardening report](review/V1_R12_HARDENING_REPORT.md),
-[r13 hardening report](review/V1_R13_HARDENING_REPORT.md), and
-[r14 threat-model simplification report](review/V1_R14_THREAT_MODEL_SIMPLIFICATION_REPORT.md), and
-[r15 state-model simplification report](review/V1_R15_STATE_MODEL_SIMPLIFICATION_REPORT.md).
-
-## Current next step
-
-Have the first live Totipo implementation independently consume the exact byte
-and semantic corpus, including fixed signature verification and future opaque
-routing. Complete platform persistence/crash and native P-256 interoperability
-evidence, including ordinary synchronization churn and immutable no-overwrite
-publication, before freezing any v1 release-candidate profile. Hostile local syscall-race
-immunity is optional implementation hardening, not an RC blocker.
+Next: repin/reconcile `totipo-java` against r16 and evaluate what existing
+implementation architecture/code should be kept, changed, simplified, or deleted.
+An independent live implementation and platform durability evidence remain
+necessary before an RC freeze; this repository's model is not a production client.

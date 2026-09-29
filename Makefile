@@ -4,11 +4,11 @@ PYTHON ?= python3
 export GOCACHE ?= $(CURDIR)/.direnv/go-build
 
 .DEFAULT_GOAL := help
-.PHONY: help spec-check test race fuzz conformance conformance-all verify check
+.PHONY: help spec-check test race fuzz conformance verify check
 .NOTPARALLEL: check
 
 help:
-	@printf '%s\n' 'make spec-check  Check the v1/r15 specification structure' 'make test        Run Go tests' 'make conformance Run baseline v1 requirements' 'make conformance-all Run baseline plus advisory-history capability' 'make verify      Verify manifest, files, and moving profile' 'make check       Run all required checks' 'make race        Run Go race tests' 'make fuzz        Run bounded parser fuzzing'
+	@printf '%s\n' 'make spec-check  Check the v1/r16 specification structure' 'make test        Run Go tests' 'make conformance Run all v1/r16 requirements' 'make verify      Verify manifest, files, and moving profile' 'make check       Run all required checks' 'make race        Run Go race tests' 'make fuzz        Run bounded parser fuzzing'
 
 spec-check:
 	$(PYTHON) tools/check_spec.py
@@ -28,11 +28,8 @@ fuzz:
 conformance:
 	$(GO) run ./conformance/cmd/totipo-conformance -root .
 
-conformance-all:
-	$(GO) run ./conformance/cmd/totipo-conformance -root . -capability advisory-history
-
 verify:
 	$(PYTHON) tools/check_vectors.py
 	$(GO) run ./conformance/cmd/totipo-conformance -root . -verify-only
 
-check: spec-check test conformance conformance-all verify
+check: spec-check test conformance verify

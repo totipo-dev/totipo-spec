@@ -2,153 +2,100 @@ package object
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 	"totipo/conformance/internal/tlv"
 )
 
-func sample() Object {
-	return Object{Routing: Routing{Version: 1, Type: Token, Identity: make([]byte, 32), Author: make([]byte, 32)}, Status: 1, Algorithm: 1, Digits: 6, Period: 30, Secret: []byte{1}}
+func fixture() Object {
+	return Object{Identity: make([]byte, 32), Status: 1, Algorithm: 1, Digits: 6, Period: 30, Secret: []byte{1}}
 }
-func change(p []byte, tag uint16, v []byte) []byte {
-	out := []byte{}
-	for len(p) > 0 {
-		f, r, e := tlv.Take(p)
-		if e != nil {
-			panic(e)
-		}
-		if f.Tag == tag {
-			f.Value = v
-		}
-		b, e := tlv.Encode(f.Tag, f.Value)
-		if e != nil {
-			panic(e)
-		}
-		out = append(out, b...)
-		p = r
+func TestCanonicalBoundaries(t *testing.T) {
+	o := fixture()
+	name := strings.Repeat("n", 128)
+	time := ^uint64(0)
+	o.ClientName = &name
+	o.ClientTime = &time
+	o.Issuer = strings.Repeat("i", 256)
+	o.Account = strings.Repeat("a", 256)
+	o.Secret = bytes.Repeat([]byte{1}, 128)
+	for i := 0; i < 4; i++ {
+		o.Parents = append(o.Parents, bytes.Repeat([]byte{byte(i)}, 32))
 	}
-	return out
-}
-func TestIntrinsicVersusProvenance(t *testing.T) {
-	o := sample()
-	for _, sig := range [][]byte{nil, {0xff}, {0x30, 0}, bytes.Repeat([]byte{0xaa}, 72)} {
-		o.Signature = sig
-		p, e := o.Encode()
-		if e != nil {
-			t.Fatal(e)
-		}
-		c, _ := Dispatch(p)
-		if c != Supported {
-			t.Fatal(c)
-		}
-	}
-	o = Object{Routing: Routing{Version: 1, Type: Device}, PublicKey: make([]byte, 65)}
-	o.Identity = DeviceID(o.PublicKey)
 	p, e := o.Encode()
-	if e != nil {
-		t.Fatal(e)
+	if e != nil || len(p) != 1005 {
+		t.Fatal(len(p), e)
 	}
-	c, _ := Dispatch(p)
-	if c != Supported {
-		t.Fatal("off-curve key must affect provenance only")
+	o.Parents = append(o.Parents, bytes.Repeat([]byte{4}, 32))
+	if _, e = o.Encode(); e == nil {
+		t.Fatal("fifth parent")
 	}
-}
-func TestRejectGrammar(t *testing.T) {
-	base, _ := sample().Encode()
-	for _, v := range []struct {
-		name string
-		tag  uint16
-		b    []byte
-	}{
-		{"time-width", 6, make([]byte, 7)}, {"identity-width", 0x101, make([]byte, 31)}, {"author-width", 0x102, make([]byte, 33)}, {"status", 0x103, []byte{0}}, {"invalid-utf8", 0x104, []byte{0xff}}, {"issuer-overflow", 0x104, bytes.Repeat([]byte{'x'}, 257)}, {"account-overflow", 0x105, bytes.Repeat([]byte{'x'}, 257)}, {"signature-overflow", 0xff01, make([]byte, 73)}, {"parent-count", 4, tlv.U16(33)},
-	} {
-		t.Run(v.name, func(t *testing.T) {
-			c, _ := Dispatch(change(base, v.tag, v.b))
-			if c != Invalid {
-				t.Fatal(c)
-			}
-		})
+	o = fixture()
+	p, _ = o.Encode()
+	for _, bad := range [][]byte{p[:len(p)-1], append(bytes.Clone(p), 0), append(bytes.Clone(p), []byte{0, 13, 0, 0}...)} {
+		if s, _ := Dispatch(bad); s != Invalid {
+			t.Fatal("bad framing")
+		}
 	}
-	o := sample()
-	p, _ := o.Encode()
-	_, tail, _ := ParseRouting(p)
-	_ = tail
-	for _, mutate := range []func(*Object){func(o *Object) { o.Algorithm = 4 }, func(o *Object) { o.Digits = 9 }, func(o *Object) { o.Period = 0 }, func(o *Object) { o.Secret = nil }, func(o *Object) { o.Secret = make([]byte, 129) }} {
-		o := sample()
+	for _, mutate := range []func(*Object){func(o *Object) { o.Period = 0 }, func(o *Object) { o.Digits = 9 }, func(o *Object) { o.Algorithm = 0 }, func(o *Object) { o.Status = 0 }, func(o *Object) { o.Secret = nil }, func(o *Object) { o.Issuer = "\xff" }, func(o *Object) { o.ClientName = new(string); *o.ClientName = strings.Repeat("a", 129) }, func(o *Object) { o.Parents = [][]byte{make([]byte, 32), make([]byte, 32)} }} {
+		o = fixture()
 		mutate(&o)
-		if _, e := o.Encode(); e == nil {
-			t.Fatal("invalid credential encoded")
-		}
-	}
-	for _, p := range [][]byte{append(bytes.Clone(base), 0), base[:len(base)-1], append(bytes.Clone(base), base[len(base)-4:]...)} {
-		if c, _ := Dispatch(p); c != Invalid {
-			t.Fatal("trailing/truncated/duplicate signature accepted")
+		if _, e = o.Encode(); e == nil {
+			t.Fatal("invalid field")
 		}
 	}
 }
-func TestFrozenOpaqueTail(t *testing.T) {
-	for _, typ := range []byte{Token, Device} {
-		o := sample()
-		o.Type = typ
-		o.Version = 255
-		p, e := o.Routing.Encode()
-		if e != nil {
-			t.Fatal(e)
-		}
-		for _, tail := range [][]byte{nil, {0xff}, {0, 0, 0xff, 0xff}, bytes.Repeat([]byte{0xaa}, 200)} {
-			c, got := Dispatch(append(bytes.Clone(p), tail...))
-			if c != Opaque || got.Version != 255 {
-				t.Fatal("future tail interpreted")
-			}
-		}
+func TestMetadataAndCompleteValue(t *testing.T) {
+	o := fixture()
+	before, _ := o.Encode()
+	v := o.ValueBytes()
+	empty := ""
+	zero := uint64(0)
+	o.ClientName = &empty
+	o.ClientTime = &zero
+	after, _ := o.Encode()
+	if bytes.Equal(before, after) || !bytes.Equal(v, o.ValueBytes()) {
+		t.Fatal("metadata equality")
+	}
+	o.Status = 2
+	if bytes.Equal(v, o.ValueBytes()) {
+		t.Fatal("status omitted")
+	}
+	if _, e := o.Encode(); e != nil {
+		t.Fatal("complete tombstone")
+	}
+	o.Secret = nil
+	if _, e := o.Encode(); e == nil {
+		t.Fatal("incomplete tombstone")
 	}
 }
-func TestTimestampAndCapacity(t *testing.T) {
-	o := sample()
-	o.AuthorTime = ^uint64(0)
-	p, e := o.Encode()
-	if e != nil {
-		t.Fatal(e)
+func TestOptionalOrderAndWidths(t *testing.T) {
+	o := fixture()
+	p, _ := o.Encode()
+	for _, tail := range [][]byte{{0, 12, 0, 0}, {0, 11, 0, 1, 255}, {0, 12, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0}} {
+		if s, _ := Dispatch(append(bytes.Clone(p), tail...)); s != Invalid {
+			t.Fatal("metadata grammar")
+		}
 	}
-	_, got := Dispatch(p)
-	if got.AuthorTime != o.AuthorTime {
-		t.Fatal("lost unsigned time")
-	}
-	d := Object{Routing: Routing{Version: 1, Type: Device}, PublicKey: make([]byte, 65), DisplayName: string(bytes.Repeat([]byte{'D'}, 254))}
-	d.Identity = DeviceID(d.PublicKey)
-	for i := 0; i < 15; i++ {
-		b := make([]byte, 32)
-		b[31] = byte(i)
-		d.Parents = append(d.Parents, b)
-	}
-	// 70-byte signature yields 1005 bytes, but writer must reserve 1007.
-	d.Signature = make([]byte, 70)
-	p, e = d.Encode()
-	if e != nil {
-		t.Fatal(e)
-	}
-	n, e := d.ReservedSize()
-	if e != nil || len(p) != 1005 || n != 1007 {
-		t.Fatalf("actual %d reserved %d err %v", len(p), n, e)
+	f, _ := tlv.Encode(12, tlv.U64(0))
+	if s, _ := Dispatch(append(p, f...)); s != Supported {
+		t.Fatal("time without name")
 	}
 }
 func FuzzDispatch(f *testing.F) {
-	p, _ := sample().Encode()
+	o := fixture()
+	p, _ := o.Encode()
 	f.Add(p)
 	f.Add([]byte{})
-	f.Add([]byte{0, 1, 0, 1, 2})
 	f.Fuzz(func(t *testing.T, p []byte) {
-		c, o := Dispatch(p)
-		if c == Supported {
-			b, e := o.Encode()
-			if e != nil || !bytes.Equal(p, b) {
-				t.Fatal("canonical roundtrip failure")
+		s, o := Dispatch(p)
+		if s == Supported {
+			again, e := o.Encode()
+			if e != nil || !bytes.Equal(p, again) {
+				t.Fatal("canonical roundtrip")
 			}
-		}
-		if c == Opaque {
-			r, _, e := ParseRouting(p)
-			if e != nil || r.Version == 1 {
-				t.Fatal("invalid opaque classification")
-			}
+		} else if o != nil {
+			t.Fatal("invalid object leaked")
 		}
 	})
 }

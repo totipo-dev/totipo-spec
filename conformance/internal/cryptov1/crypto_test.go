@@ -2,15 +2,9 @@ package cryptov1
 
 import (
 	"bytes"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"encoding/asn1"
 	"encoding/binary"
 	"encoding/hex"
-	"math/big"
 	"testing"
-	"totipo/conformance/internal/object"
 )
 
 func TestEnvelopeRejections(t *testing.T) {
@@ -77,53 +71,6 @@ func TestBootstrapAuthentication(t *testing.T) {
 		t.Fatal("tag tamper")
 	}
 }
-func TestSigningAndProvenance(t *testing.T) {
-	priv, e := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if e != nil {
-		t.Fatal(e)
-	}
-	pub := PublicBytes(&priv.PublicKey)
-	k, _ := Derive(make([]byte, 32))
-	o := object.Object{Routing: object.Routing{Version: 1, Type: object.Token, Identity: make([]byte, 32), Author: object.DeviceID(pub)}, Status: 1, Algorithm: 1, Digits: 6, Period: 30, Secret: []byte{1}}
-	o, e = k.Sign(o, priv)
-	if e != nil {
-		t.Fatal(e)
-	}
-	if k.Provenance(o, pub) != "VERIFIED" {
-		t.Fatal("signature")
-	}
-	var pair struct{ R, S *big.Int }
-	rest, e := asn1.Unmarshal(o.Signature, &pair)
-	if e != nil || len(rest) != 0 {
-		t.Fatal("DER fixture")
-	}
-	pair.S.Sub(priv.Params().N, pair.S)
-	o.Signature, e = asn1.Marshal(pair)
-	if e != nil {
-		t.Fatal(e)
-	}
-	if k.Provenance(o, pub) != "VERIFIED" {
-		t.Fatal("high-S/low-S equivalent rejected")
-	}
-	good := bytes.Clone(o.Signature)
-	o.Signature = append(o.Signature, 0)
-	if k.Provenance(o, pub) != "REJECTED" {
-		t.Fatal("noncanonical trailing DER accepted")
-	}
-	o.Signature = good
-
-	if k.Provenance(o, nil) != "UNRESOLVED" {
-		t.Fatal("missing key")
-	}
-	o.AuthorTime++
-	if k.Provenance(o, pub) != "REJECTED" {
-		t.Fatal("timestamp not signed")
-	}
-	o.Signature = nil
-	if k.Provenance(o, nil) != "REJECTED" {
-		t.Fatal("empty signature")
-	}
-}
 func FuzzOpen(f *testing.F) {
 	k, _ := Derive(make([]byte, 32))
 	name, b, _ := k.Seal([]byte{1, 2, 3})
@@ -138,4 +85,44 @@ func FuzzOpen(f *testing.F) {
 			}
 		}
 	})
+}
+
+func TestRewrapPreservesRootAndFingerprint(t *testing.T) {
+	root := bytes.Repeat([]byte{0x19}, 32)
+	fp, e := Fingerprint(root)
+	if e != nil {
+		t.Fatal(e)
+	}
+	first, e := Wrap([]byte("old"), root, bytes.Repeat([]byte{1}, 16), bytes.Repeat([]byte{2}, 12))
+	if e != nil {
+		t.Fatal(e)
+	}
+	second, e := Wrap([]byte("new"), root, bytes.Repeat([]byte{3}, 16), bytes.Repeat([]byte{4}, 12))
+	if e != nil {
+		t.Fatal(e)
+	}
+	if bytes.Equal(first, second) {
+		t.Fatal("wrapper did not change")
+	}
+	for i, record := range [][]byte{first, second} {
+		password := []byte("old")
+		if i == 1 {
+			password = []byte("new")
+		}
+		got, e := Unwrap(password, record)
+		if e != nil || !bytes.Equal(got, root) {
+			t.Fatal("retained wrapper", e)
+		}
+		actual, e := Fingerprint(got)
+		if e != nil || !bytes.Equal(actual, fp) {
+			t.Fatal("recognition changed")
+		}
+	}
+	other, _ := Fingerprint(bytes.Repeat([]byte{0x20}, 32))
+	if bytes.Equal(fp, other) {
+		t.Fatal("independent roots")
+	}
+	if _, e := Fingerprint(nil); e == nil {
+		t.Fatal("root width")
+	}
 }

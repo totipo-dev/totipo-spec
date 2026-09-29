@@ -1,4 +1,4 @@
-// Package totp implements RFC 6238 with the credential bounds in v1 section 40.
+// Package totp implements RFC 6238 with the credential bounds in v1 Section 19.
 package totp
 
 import (
@@ -13,7 +13,7 @@ import (
 )
 
 // Code uses T0=0, unsigned Unix seconds, and an eight-byte big-endian counter.
-// Its caller must establish credential-use eligibility before using the result.
+// Lifecycle and current/historical state do not change this computation.
 func Code(algorithm byte, secret []byte, digits byte, period uint32, unixSeconds uint64) (string, error) {
 	if digits < 6 || digits > 8 || period == 0 || len(secret) < 1 || len(secret) > 128 {
 		return "", errors.New("invalid TOTP credential")

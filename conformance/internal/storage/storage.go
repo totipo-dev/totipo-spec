@@ -1,11 +1,10 @@
 // Package storage evaluates an observed filesystem environment for the v1
 // envelope family. It does not open host paths: a live adapter must honor observed
 // entry kinds, bound reads, and handle ordinary churn conservatively. Hostile local
-// syscall-race immunity is optional under r15.
+// syscall-race immunity is optional.
 package storage
 
 import (
-	"bytes"
 	"errors"
 	"strings"
 	"totipo/conformance/internal/cryptov1"
@@ -23,9 +22,24 @@ type Entry struct {
 }
 type Observation struct {
 	Path, Class string
-	ExactObject []byte
 	Semantic    []byte
 	Object      *object.Object
+}
+
+// BootstrapCandidate accepts the observed entry, not a followed link target.
+func BootstrapCandidate(path, kind string) bool { return path == "vault" && kind == "regular" }
+
+// OpenBootstrap models type checking before reading or interpreting canonical
+// bytes. A live adapter still supplies bounded reads; no inode/race proof is assumed.
+func OpenBootstrap(entry Entry, password []byte) ([]byte, error) {
+	if !BootstrapCandidate(entry.Path, entry.Kind) || entry.Read == nil {
+		return nil, errors.New("invalid canonical bootstrap entry")
+	}
+	record, e := entry.Read()
+	if e != nil {
+		return nil, e
+	}
+	return cryptov1.Unwrap(password, record)
 }
 
 func Candidate(path, kind string) bool {
@@ -44,13 +58,11 @@ func Candidate(path, kind string) bool {
 	return true
 }
 
-// Scan never calls Read for siblings, nested entries, wrong names, symlinks, or
-// special files. An unsafe family entry or unreadable candidate is an error,
-// not authenticated opaque evidence and not a successful complete discovery.
-// Missing family directories are empty. Errors require incomplete discovery in
-// the caller; they must not be silently classified as ordinary invalid bytes.
+// Scan retains validated objects while accumulating diagnostic errors. Failure
+// does not globally invalidate observed objects or prohibit protocol operations.
 func Scan(familyKind string, entries []Entry, k cryptov1.Keys) ([]Observation, error) {
 	out := []Observation{}
+	var diagnostics []error
 	if familyKind == "missing" {
 		return out, nil
 	}
@@ -62,11 +74,13 @@ func Scan(familyKind string, entries []Entry, k cryptov1.Keys) ([]Observation, e
 			continue
 		}
 		if entry.Read == nil {
-			return out, errors.New("unreadable candidate")
+			diagnostics = append(diagnostics, errors.New("unreadable candidate"))
+			continue
 		}
 		b, e := entry.Read()
 		if e != nil {
-			return out, e
+			diagnostics = append(diagnostics, e)
+			continue
 		}
 		obs := Observation{Path: entry.Path, Class: InvalidStorage}
 		if len(b) == 1024 {
@@ -74,12 +88,9 @@ func Scan(familyKind string, entries []Entry, k cryptov1.Keys) ([]Observation, e
 			if e == nil {
 				obs.Class, obs.Object = object.Dispatch(p)
 				obs.Semantic = p
-				if obs.Class == object.Unscoped {
-					obs.ExactObject = bytes.Clone(b)
-				}
 			}
 		}
 		out = append(out, obs)
 	}
-	return out, nil
+	return out, errors.Join(diagnostics...)
 }

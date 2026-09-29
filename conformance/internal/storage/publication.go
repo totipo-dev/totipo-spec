@@ -2,10 +2,10 @@ package storage
 
 import "bytes"
 
-// Install models the complete/no-overwrite local API boundary. It intentionally
-// has no fsync-existing-file or history-journal parameters. A real adapter must
-// supply atomic/complete visibility and report acknowledgement truthfully.
-func Install(existing, intended []byte, kind string, acknowledged bool) ([]byte, string) {
+// Install classifies backend outcomes, not host syscalls. On failure the
+// returned observation does not assert absence or describe effects of an
+// ambiguous backend operation. Durable means required persistence succeeded.
+func Install(existing, intended []byte, kind string, durable bool) ([]byte, string) {
 	if len(intended) != 1024 {
 		return existing, "FAILED"
 	}
@@ -15,29 +15,31 @@ func Install(existing, intended []byte, kind string, acknowledged bool) ([]byte,
 		}
 		return existing, "ALREADY_PRESENT_EXACT"
 	}
-	if !acknowledged {
-		return existing, "UNKNOWN"
+	if !durable {
+		return existing, "FAILED"
 	}
 	return bytes.Clone(intended), "PUBLISHED_NEW"
 }
 
-// Establish separates absence from corrupt/mismatching authoritative anchors.
-// Authenticated and durable are supplied trusted local API outcomes.
-func Establish(existing, derived []byte, present, authenticated, durable bool) string {
-	if !authenticated || len(derived) != 32 {
-		return "REJECTED"
+// Create needs canonical lowercase `vault` absence, not any inventory of object-looking files.
+func Create(kind string, complete, durable bool) string {
+	if kind != "absent" || !complete || !durable {
+		return "FAILED"
 	}
-	if present {
-		if len(existing) != 32 {
-			return "ANCHOR_FAILURE"
-		}
-		if !bytes.Equal(existing, derived) {
-			return "REJECTED"
-		}
-		return "ESTABLISHED"
+	return "CREATED"
+}
+
+// Replace compares exact BASE to freshly observed CURRENT at canonical `vault`. It does not model
+// atomic CAS and cannot rule out a race after this observation.
+func Replace(base, current []byte, kind string, readable, complete, durable bool) string {
+	if !BootstrapCandidate("vault", kind) || !readable {
+		return "FAILED"
 	}
-	if !durable {
-		return "INCOMPLETE"
+	if !bytes.Equal(base, current) {
+		return "STALE"
 	}
-	return "ESTABLISHED"
+	if !complete || !durable {
+		return "FAILED"
+	}
+	return "REPLACED"
 }

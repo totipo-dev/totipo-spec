@@ -35,8 +35,8 @@ func TestStorageAuthenticationBoundary(t *testing.T) {
 		}
 	}
 	valid, err := Scan("directory", []Entry{{Path: "objects-v1/" + id, Kind: "regular", Read: func() ([]byte, error) { return b, nil }}}, k)
-	if err != nil || valid[0].Class != "OPAQUE_UNSCOPED" {
-		t.Fatal("authenticated unscoped future evidence lost", err)
+	if err != nil || valid[0].Class != "INVALID" {
+		t.Fatal("invalid authenticated grammar accepted", err)
 	}
 	b[0] ^= 1
 	out, e := Scan("directory", []Entry{{Path: "objects-v1/" + id, Kind: "regular", Read: func() ([]byte, error) { return b, nil }}}, k)
@@ -45,7 +45,7 @@ func TestStorageAuthenticationBoundary(t *testing.T) {
 	}
 	_, e = Scan("directory", []Entry{{Path: "objects-v1/" + id, Kind: "regular", Read: func() ([]byte, error) { return nil, errors.New("unreadable") }}}, k)
 	if e == nil {
-		t.Fatal("unreadable candidate treated as complete")
+		t.Fatal("missing read diagnostic")
 	}
 }
 
@@ -57,7 +57,71 @@ func TestIncompleteScanPreservesAcceptedObservations(t *testing.T) {
 		{Path: "objects-v1/" + strings.Repeat("b", 64), Kind: "regular"},
 	}
 	obs, err := Scan("directory", entries, k)
-	if err == nil || len(obs) != 1 || obs[0].Class != "OPAQUE_UNSCOPED" {
+	if err == nil || len(obs) != 1 || obs[0].Class != "INVALID" {
 		t.Fatalf("%v %v", obs, err)
+	}
+}
+
+func TestPublicationRetriesAndReplacement(t *testing.T) {
+	intended := make([]byte, 1024)
+	intended[0] = 1
+	// An error can still have installed the bytes. The next ordinary observation
+	// sees them, and an exact retry succeeds without fresh persistence.
+	_, out := Install(nil, intended, "absent", false)
+	if out != "FAILED" {
+		t.Fatal(out)
+	}
+	existing := append([]byte{}, intended...)
+	after, out := Install(existing, intended, "regular", false)
+	if out != "ALREADY_PRESENT_EXACT" || &after[0] != &existing[0] {
+		t.Fatal("exact retry mutated")
+	}
+	other := append([]byte{}, intended...)
+	other[0] = 2
+	after, out = Install(other, intended, "regular", true)
+	if out != "FAILED" || after[0] != 2 {
+		t.Fatal("overwrote different")
+	}
+	if Replace([]byte{1}, []byte{2}, "regular", true, true, true) != "STALE" {
+		t.Fatal("stale replaced")
+	}
+	if Replace([]byte{1}, []byte{1}, "regular", false, true, true) != "FAILED" {
+		t.Fatal("no comparison")
+	}
+}
+
+func TestCanonicalEntryTypes(t *testing.T) {
+	k, _ := cryptov1.Derive(make([]byte, 32))
+	never := func() ([]byte, error) { t.Fatal("deliberately read wrong-type entry"); return nil, nil }
+	for _, kind := range []string{"absent", "symlink", "directory", "fifo", "socket", "device", "other"} {
+		if _, e := OpenBootstrap(Entry{Path: "vault", Kind: kind, Read: never}, nil); e == nil {
+			t.Fatal("bootstrap type", kind)
+		}
+		if Replace([]byte{1}, []byte{1}, kind, true, true, true) != "FAILED" {
+			t.Fatal("replacement type", kind)
+		}
+	}
+	for _, path := range []string{"VAULT", "Vault", "vault.tmp", "vault/conflict", "other/vault"} {
+		if _, e := OpenBootstrap(Entry{Path: path, Kind: "regular", Read: never}, nil); e == nil {
+			t.Fatal("bootstrap alias", path)
+		}
+	}
+	root := make([]byte, 32)
+	record, e := cryptov1.Wrap(nil, root, make([]byte, 16), make([]byte, 12))
+	if e != nil {
+		t.Fatal(e)
+	}
+	got, e := OpenBootstrap(Entry{Path: "vault", Kind: "regular", Read: func() ([]byte, error) { return record, nil }}, nil)
+	if e != nil || len(got) != 32 {
+		t.Fatal("regular bootstrap rejected", e)
+	}
+	entries := []Entry{{Path: "objects-v1/" + strings.Repeat("a", 64), Kind: "regular", Read: never}}
+	for _, kind := range []string{"symlink", "regular", "fifo", "socket", "device", "other"} {
+		if obs, e := Scan(kind, entries, k); e == nil || len(obs) != 0 {
+			t.Fatal("namespace traversed", kind)
+		}
+	}
+	if obs, e := Scan("missing", entries, k); e != nil || len(obs) != 0 {
+		t.Fatal("missing namespace", e)
 	}
 }

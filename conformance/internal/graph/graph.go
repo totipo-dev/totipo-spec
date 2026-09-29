@@ -1,323 +1,211 @@
-// Package graph interprets explicit accepted snapshots. Advisory history only supplies warnings.
+// Package graph evaluates valid observed TOKEN facts. Abstract IDs in semantic
+// tests do not claim to be constructible cryptographic objects.
 package graph
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/hex"
 	"errors"
-	"reflect"
 	"sort"
+	"totipo/conformance/internal/object"
 )
 
-var ErrIntegrity = errors.New("accepted graph integrity failure")
-
 type Node struct {
-	ID         string   `json:"id"`
-	Version    uint8    `json:"version"`
-	Type       string   `json:"type"`
-	Identity   string   `json:"identity"`
-	Class      string   `json:"class"`
-	Parents    []string `json:"parents"`
-	Author     string   `json:"author,omitempty"`
-	AuthorTime uint64   `json:"author_time"`
-	PublicKey  string   `json:"public_key,omitempty"`
-	// Digest represents the exact authenticated semantic bytes in abstract cases.
-	Digest string `json:"semantic_digest"`
+	ID       string   `json:"id"`
+	Identity string   `json:"identity"`
+	Parents  []string `json:"parents"`
+	// Canonical identifies exact canonical plaintext in defensive model fixtures.
+	Canonical  string  `json:"canonical"`
+	Value      string  `json:"value"`
+	ClientName *string `json:"client_name,omitempty"`
+	ClientTime *uint64 `json:"client_time,omitempty"`
 }
-type Value struct {
-	Status      string `json:"status"`
-	Issuer      string `json:"issuer"`
-	Account     string `json:"account"`
-	Algorithm   uint8  `json:"algorithm"`
-	Digits      uint8  `json:"digits"`
-	Period      uint32 `json:"period"`
-	Secret      string `json:"secret_hex"`
-	DisplayName string `json:"display_name,omitempty"`
-	Verified    bool   `json:"verified,omitempty"`
-	Provenance  string `json:"provenance,omitempty"`
+type Result struct {
+	Heads       []string `json:"heads"`
+	HeadObjects []Node   `json:"head_objects"`
+	Values      []string `json:"values"`
+	Unresolved  []string `json:"unresolved"`
+	Conflicting bool     `json:"conflicting"`
+}
+type Store struct {
+	nodes  map[string]Node
+	failed map[string]bool
 }
 
-// State contains accepted evidence for one observation context. It is not a journal.
-type State struct {
-	Nodes               map[string]Node
-	Available           map[string]Value
-	IntegrityFailure    bool
-	DiscoveryIncomplete bool
-	HistoryLost         bool
-	HistoryExpected     bool
-	CacheWriteFailed    bool
-	Remembered          map[string]Node
-}
-
-func New() *State {
-	return &State{Nodes: map[string]Node{}, Available: map[string]Value{}, Remembered: map[string]Node{}}
-}
-
-// Snapshot makes a detached planning snapshot; subsequent observations cannot mutate it.
-func (s *State) Snapshot() *State {
-	c := New()
-	for id, n := range s.Nodes {
-		c.Nodes[id] = clone(n)
+func New() *Store { return &Store{map[string]Node{}, map[string]bool{}} }
+func (s *Store) Add(n Node) error {
+	if s.failed[n.ID] {
+		return errors.New("failed object identity")
 	}
-	for id, v := range s.Available {
-		c.Available[id] = v
+	if old, ok := s.nodes[n.ID]; ok && old.Canonical != n.Canonical {
+		delete(s.nodes, n.ID)
+		s.failed[n.ID] = true
+		return errors.New("same-ID integrity failure")
 	}
-	c.IntegrityFailure = s.IntegrityFailure
-	return c
-}
-func (s *State) Remember() {
-	for id, n := range s.Nodes {
-		s.Remembered[id] = clone(n)
-	}
-	s.HistoryLost = false
-	s.HistoryExpected = true
-}
-
-// LoseHistory requires meaningful evidence of previously retained/expected state.
-func (s *State) LoseHistory() { s.Remembered = map[string]Node{}; s.HistoryLost = s.HistoryExpected }
-func (s *State) ClearHistory() {
-	s.Remembered = map[string]Node{}
-	s.HistoryLost = false
-	s.HistoryExpected = false
-	s.CacheWriteFailed = false
-}
-
-func (s *State) Warnings() []string {
-	var w []string
-	if s.DiscoveryIncomplete {
-		w = append(w, "PROCESSING_INCOMPLETE")
-	}
-	if s.HistoryLost {
-		w = append(w, "HISTORY_MEMORY_LOST")
-	}
-	if s.CacheWriteFailed {
-		w = append(w, "HISTORY_CACHE_WRITE_FAILED")
-	}
-	for id, old := range s.Remembered {
-		incorporated := false
-		if _, ok := s.Nodes[id]; ok {
-			incorporated = true
-		}
-		// A direct signed claim incorporates this exact remembered ID even if its
-		// bytes are unavailable. Do not traverse remembered/cache-only intermediates.
-		for _, n := range s.Nodes {
-			for _, p := range n.Parents {
-				if p == id && n.Class != "OPAQUE_UNSCOPED" && old.Class != "OPAQUE_UNSCOPED" && n.Type == old.Type && n.Identity == old.Identity {
-					incorporated = true
-				}
-			}
-		}
-		if !incorporated {
-			w = append(w, "HISTORY_REGRESSION")
-			break
-		}
-	}
-	for _, n := range s.Nodes {
-		if n.Class == "OPAQUE_UNSCOPED" {
-			w = append(w, "UNKNOWN_FUTURE_EVIDENCE")
-			break
-		}
-	}
-	sort.Strings(w)
-	return w
-}
-func clone(n Node) Node {
-	n.Parents = append([]string(nil), n.Parents...)
-	sort.Strings(n.Parents)
-	return n
-}
-func (s *State) Learn(n Node, v *Value) error {
-	n = clone(n)
-	if old, ok := s.Nodes[n.ID]; ok && !reflect.DeepEqual(old, n) {
-		s.IntegrityFailure = true
-		return ErrIntegrity
-	}
-	if n.Class == "SUPPORTED_VALID" && v == nil {
-		return errors.New("supported accepted observation requires complete value")
-	}
-	if old, ok := s.Available[n.ID]; ok && v != nil {
-		previous, next := old, *v
-		previous.Verified, next.Verified = false, false
-		previous.Provenance, next.Provenance = "", ""
-		if previous != next {
-			s.IntegrityFailure = true
-			return ErrIntegrity
-		}
-	}
-	s.Nodes[n.ID] = n
-	if v != nil && n.Class == "SUPPORTED_VALID" {
-		s.Available[n.ID] = *v
-	}
-	if s.cyclic() {
-		s.IntegrityFailure = true
-		return ErrIntegrity
-	}
+	s.nodes[n.ID] = cloneNode(n)
 	return nil
 }
 
-// Disappear applies a subsequent observation in which this object is absent.
-func (s *State) Disappear(id string)         { delete(s.Available, id); delete(s.Nodes, id) }
-func (s *State) RemoteUnavailable(id string) { s.Disappear(id) }
-
-func (s *State) Rename(n Node, v Value) bool {
-	if s.IntegrityFailure || n.Type != "DEVICE" || n.Class != "SUPPORTED_VALID" || !verified(v) {
-		return false
+// Node returns a detached full record for current or historical presentation.
+func (s *Store) Node(id string) (Node, bool) {
+	n, ok := s.nodes[id]
+	return cloneNode(n), ok
+}
+func cloneNode(n Node) Node {
+	if n.Parents != nil {
+		n.Parents = append([]string{}, n.Parents...)
 	}
-	heads := s.Heads("DEVICE", n.Identity)
-	for _, id := range heads {
-		if s.Nodes[id].Class != "SUPPORTED_VALID" {
-			return false
-		}
+	if n.ClientName != nil {
+		name := *n.ClientName
+		n.ClientName = &name
 	}
-	n.Parents = heads
-	return s.Learn(n, &v) == nil
+	if n.ClientTime != nil {
+		time := *n.ClientTime
+		n.ClientTime = &time
+	}
+	return n
 }
 
-func verified(v Value) bool { return v.Provenance == "VERIFIED" || (v.Provenance == "" && v.Verified) }
-func (s *State) Edge(child, parent string) string {
-	c, ok := s.Nodes[child]
-	if !ok {
-		return "UNRESOLVED"
+// FromObject projects an already validated object without losing its metadata.
+// Symbolic graph tests may construct Node directly instead of using wire IDs.
+func FromObject(id string, o object.Object) (Node, error) {
+	p, e := o.Encode()
+	if e != nil {
+		return Node{}, e
 	}
-	p, ok := s.Nodes[parent]
-	if !ok {
-		return "UNRESOLVED"
+	parents := []string{}
+	for _, p := range o.Parents {
+		parents = append(parents, hex.EncodeToString(p))
 	}
-	if c.Class == "OPAQUE_UNSCOPED" || p.Class == "OPAQUE_UNSCOPED" || c.Type != p.Type || c.Identity != p.Identity {
-		return "REJECTED"
-	}
-	return "RESOLVED"
+	return cloneNode(Node{ID: id, Identity: hex.EncodeToString(o.Identity), Parents: parents,
+		Canonical: hex.EncodeToString(p), Value: hex.EncodeToString(o.ValueBytes()),
+		ClientName: o.ClientName, ClientTime: o.ClientTime}), nil
 }
-func (s *State) cyclic() bool {
-	colors := map[string]uint8{}
-	var visit func(string) bool
-	visit = func(id string) bool {
-		if colors[id] == 1 {
-			return true
-		}
-		if colors[id] == 2 {
-			return false
-		}
-		colors[id] = 1
-		for _, p := range s.Nodes[id].Parents {
-			if s.Edge(id, p) == "RESOLVED" && visit(p) {
-				return true
-			}
-		}
-		colors[id] = 2
-		return false
-	}
-	for id := range s.Nodes {
-		if visit(id) {
-			return true
-		}
-	}
-	return false
-}
-func (s *State) Heads(typ, identity string) []string {
-	heads := map[string]bool{}
-	for id, n := range s.Nodes {
-		if n.Type == typ && n.Identity == identity && n.Class != "OPAQUE_UNSCOPED" {
-			heads[id] = true
-		}
-	}
-	for _, n := range s.Nodes {
-		if n.Type != typ || n.Identity != identity {
-			continue
-		}
-		for _, p := range n.Parents {
-			if s.Edge(n.ID, p) == "RESOLVED" {
-				delete(heads, p)
-			}
-		}
-	}
+func (s *Store) Remove(id string) { delete(s.nodes, id) }
+func sorted(m map[string]bool) []string {
 	out := []string{}
-	for id := range heads {
-		out = append(out, id)
+	for k := range m {
+		out = append(out, k)
 	}
 	sort.Strings(out)
 	return out
 }
-
-type Result struct {
-	Warnings             []string `json:"warnings,omitempty"`
-	RequiresConfirmation bool     `json:"requires_confirmation,omitempty"`
-	Heads                []string `json:"heads"`
-	ValueState           string   `json:"value_state"`
-	Ordinary             bool     `json:"ordinary"`
-	Author               bool     `json:"author"`
-	Candidate            bool     `json:"candidate"`
-	CandidateWarning     bool     `json:"candidate_warning"`
-	IntegrityFailure     bool     `json:"integrity_failure"`
-	Presentation         string   `json:"presentation,omitempty"`
-}
-
-func (s *State) Evaluate(identity, candidate, device string) Result {
-	r := Result{Warnings: s.Warnings(), Heads: s.Heads("TOKEN", identity), ValueState: "EMPTY", IntegrityFailure: s.IntegrityFailure}
-	opaque := false
-	values := map[string]Value{}
-	for _, id := range r.Heads {
-		n := s.Nodes[id]
-		if n.Class == "OPAQUE_ROUTABLE" {
-			opaque = true
-			continue
-		}
-		v := s.Available[id]
-		v.DisplayName = ""
-		v.Verified = false
-		v.Provenance = ""
-		b, _ := json.Marshal(v)
-		values[string(b)] = v
-	}
-	switch {
-	case opaque:
-		r.ValueState = "VALUE_INCOMPLETE_OPAQUE"
-	case len(values) > 1:
-		r.ValueState = "CONFLICT"
-	case len(values) == 1:
-		r.ValueState = "UNAMBIGUOUS"
-	}
-	r.Author = !s.IntegrityFailure && !opaque && (r.ValueState == "UNAMBIGUOUS" || r.ValueState == "EMPTY")
-	r.RequiresConfirmation = !s.IntegrityFailure && r.ValueState == "CONFLICT"
-	if r.ValueState == "UNAMBIGUOUS" && !s.IntegrityFailure {
-		for _, v := range values {
-			r.Ordinary = v.Status == "LIVE"
+func (s *Store) Evaluate(identity string) Result {
+	nodes := map[string]Node{}
+	for id, n := range s.nodes {
+		if n.Identity == identity {
+			nodes[id] = n
 		}
 	}
-	n, known := s.Nodes[candidate]
-	v, available := s.Available[candidate]
-	r.Candidate = !s.IntegrityFailure && known && available && n.Type == "TOKEN" && n.Identity == identity && n.Class == "SUPPORTED_VALID" && v.Status == "LIVE"
-	r.CandidateWarning = r.Candidate
-	if device != "" {
-		names := map[string]bool{}
-		h := s.Heads("DEVICE", device)
-		r.Presentation = "UNAVAILABLE"
-		complete := len(h) > 0
-		for _, id := range h {
-			n := s.Nodes[id]
-			v, ok := s.Available[id]
-			if n.Class == "OPAQUE_ROUTABLE" {
-				r.Presentation = "OPAQUE"
-				complete = false
+	reach := map[string]map[string]bool{}
+	unresolved := map[string]bool{}
+	for id := range nodes {
+		seen := map[string]bool{}
+		todo := []string{id}
+		for len(todo) > 0 {
+			x := todo[len(todo)-1]
+			todo = todo[:len(todo)-1]
+			if seen[x] {
+				continue
+			}
+			seen[x] = true
+			for _, p := range nodes[x].Parents {
+				if _, ok := nodes[p]; ok {
+					todo = append(todo, p)
+				} else {
+					unresolved[p] = true
+				}
+			}
+		}
+		reach[id] = seen
+	}
+	heads := map[string]bool{}
+	values := map[string]bool{}
+	for id, n := range nodes {
+		head := true
+		for other := range nodes {
+			if reach[other][id] && !reach[id][other] {
+				head = false
 				break
 			}
-			if !ok {
-				complete = false
-			} else if verified(v) {
-				names[v.DisplayName] = true
-			}
 		}
-		if complete && len(names) > 0 {
-			r.Presentation = "VERIFIED"
-			if len(names) > 1 {
-				r.Presentation = "CONFLICT"
-			}
+		if head {
+			heads[id] = true
+			values[n.Value] = true
 		}
 	}
-	if s.IntegrityFailure {
-		r.Ordinary = false
-		r.Author = false
-		r.Candidate = false
-		r.CandidateWarning = false
+	ids := sorted(heads)
+	records := make([]Node, 0, len(ids))
+	for _, id := range ids {
+		records = append(records, cloneNode(nodes[id]))
 	}
-	return r
+	return Result{Heads: ids, HeadObjects: records, Values: sorted(values), Unresolved: sorted(unresolved), Conflicting: len(values) > 1}
+}
+
+// Fold stages sorted original IDs with capacity four. The callback constructs
+// and publishes a complete object with the operation's desired value and exact
+// client metadata unchanged in every stage, returning
+// its ID. Earlier published stages survive any later callback error.
+func Fold(frontier [][]byte, publish func([][]byte) ([]byte, error)) ([][][]byte, error) {
+	ids := make([][]byte, len(frontier))
+	for i, id := range frontier {
+		if len(id) != 32 {
+			return nil, errors.New("ID width")
+		}
+		ids[i] = bytes.Clone(id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return bytes.Compare(ids[i], ids[j]) < 0 })
+	for i := 1; i < len(ids); i++ {
+		if bytes.Equal(ids[i-1], ids[i]) {
+			return nil, errors.New("duplicate frontier")
+		}
+	}
+	stages := [][][]byte{}
+	var carry []byte
+	for len(ids) > 0 || len(stages) == 0 {
+		n := 4
+		if carry != nil {
+			n = 3
+		}
+		if n > len(ids) {
+			n = len(ids)
+		}
+		parents := append([][]byte{}, ids[:n]...)
+		ids = ids[n:]
+		if carry != nil {
+			parents = append(parents, carry)
+		}
+		sort.Slice(parents, func(i, j int) bool { return bytes.Compare(parents[i], parents[j]) < 0 })
+		next, e := publish(parents)
+		if e != nil {
+			return stages, e
+		}
+		if len(next) != 32 {
+			return stages, errors.New("published ID width")
+		}
+		stages = append(stages, parents)
+		carry = bytes.Clone(next)
+		if len(ids) == 0 {
+			break
+		}
+	}
+	return stages, nil
+}
+
+// FoldObjects snapshots one complete operation. Only parent lists change between
+// stages. Each callback receives detached fields so it cannot mutate later stages.
+func FoldObjects(frontier [][]byte, operation object.Object, publish func(object.Object) ([]byte, error)) ([][][]byte, error) {
+	operation.Parents = nil
+	template, e := operation.Encode()
+	if e != nil {
+		return nil, e
+	}
+	return Fold(frontier, func(parents [][]byte) ([]byte, error) {
+		_, stage := object.Dispatch(template)
+		stage.Parents = make([][]byte, len(parents))
+		for i, p := range parents {
+			stage.Parents[i] = bytes.Clone(p)
+		}
+		return publish(*stage)
+	})
 }

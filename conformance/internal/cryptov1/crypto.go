@@ -1,14 +1,11 @@
-// Package cryptov1 implements the fixed v1 envelope and provenance primitives.
+// Package cryptov1 implements the fixed v1 envelope and root wrapping.
 package cryptov1
 
 import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -22,7 +19,7 @@ import (
 
 var ErrCrypto = errors.New("invalid v1 cryptographic input")
 
-type Keys struct{ ID, ObjectRoot, SignatureContext []byte }
+type Keys struct{ ID, ObjectRoot []byte }
 
 func MAC(k, p []byte) []byte { h := hmac.New(sha256.New, k); h.Write(p); return h.Sum(nil) }
 func expand(k, info []byte) []byte {
@@ -37,13 +34,13 @@ func Derive(root []byte) (Keys, error) {
 		return Keys{}, ErrCrypto
 	}
 	prk := hkdf.Extract(sha256.New, root, make([]byte, 32))
-	return Keys{expand(prk, []byte("totipo/v1/object-id")), expand(prk, []byte("totipo/v1/object-key-root")), expand(prk, []byte("totipo/v1/signature-context"))}, nil
+	return Keys{expand(prk, []byte("totipo/v1/object-id")), expand(prk, []byte("totipo/v1/object-key-root"))}, nil
 }
-func Binding(root []byte) ([]byte, error) {
+func Fingerprint(root []byte) ([]byte, error) {
 	if len(root) != 32 {
 		return nil, ErrCrypto
 	}
-	return MAC(root, []byte("totipo/v1/local-vault-binding")), nil
+	return MAC(root, []byte("totipo/v1/vault-fingerprint")), nil
 }
 func (k Keys) ObjectKey(id []byte) []byte {
 	return expand(k.ObjectRoot, append([]byte("totipo/v1/object-key"), id...))
@@ -107,74 +104,6 @@ func (k Keys) Open(name string, b []byte) ([]byte, error) {
 		return nil, ErrCrypto
 	}
 	return bytes.Clone(semantic), nil
-}
-func (k Keys) SignatureInput(o object.Object) ([]byte, error) {
-	p, e := o.Unsigned()
-	if e != nil {
-		return nil, e
-	}
-	domain := "totipo/v1/token"
-	if o.Type == object.Device {
-		domain = "totipo/v1/device"
-	}
-	b := append([]byte(domain), k.SignatureContext...)
-	return append(b, p...), nil
-}
-func PublicBytes(k *ecdsa.PublicKey) []byte { return elliptic.Marshal(elliptic.P256(), k.X, k.Y) }
-func (k Keys) Provenance(o object.Object, public []byte) string {
-	if len(o.Signature) == 0 {
-		return "REJECTED"
-	}
-	if o.Type == object.Device {
-		public = o.PublicKey
-	} else if len(public) == 0 {
-		return "UNRESOLVED"
-	}
-	want := o.Author
-	if o.Type == object.Device {
-		want = o.Identity
-	}
-	if !bytes.Equal(want, object.DeviceID(public)) {
-		return "REJECTED"
-	}
-	x, y := elliptic.Unmarshal(elliptic.P256(), public)
-	if x == nil {
-		return "REJECTED"
-	}
-	input, e := k.SignatureInput(o)
-	if e != nil {
-		return "REJECTED"
-	}
-	h := sha256.Sum256(input)
-	if !ecdsa.VerifyASN1(&ecdsa.PublicKey{Curve: elliptic.P256(), X: x, Y: y}, h[:], o.Signature) {
-		return "REJECTED"
-	}
-	return "VERIFIED"
-}
-
-// Sign plans capacity before one signing operation and verifies locally. It
-// never retries to shorten a signature or change the chosen parent set.
-func (k Keys) Sign(o object.Object, private *ecdsa.PrivateKey) (object.Object, error) {
-	n, e := o.ReservedSize()
-	if e != nil {
-		return o, e
-	}
-	if n > object.Capacity {
-		return o, ErrCrypto
-	}
-	input, e := k.SignatureInput(o)
-	if e != nil {
-		return o, e
-	}
-	h := sha256.Sum256(input)
-	o.Signature, e = ecdsa.SignASN1(rand.Reader, private, h[:])
-	if e != nil {
-		return o, e
-	}
-	if k.Provenance(o, PublicBytes(&private.PublicKey)) != "VERIFIED" {
-		return o, ErrCrypto
-	}
-	return o, nil
 }
 func PasswordValid(password []byte) bool { return len(password) <= 1024 && utf8.Valid(password) }
 func WrapKey(password, salt []byte) ([]byte, error) {

@@ -12,15 +12,64 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"sort"
 	"strings"
 	"totipo/conformance/internal/cryptov1"
 	"totipo/conformance/internal/graph"
 	"totipo/conformance/internal/object"
+	"totipo/conformance/internal/storage"
 	"totipo/conformance/internal/totp"
 )
 
+// JSON objects have unique member names at every depth; rejecting duplicates
+// avoids consumer-dependent interpretations before decoding typed payloads.
+func uniqueJSON(p []byte) error {
+	d := json.NewDecoder(bytes.NewReader(p))
+	d.UseNumber()
+	var walk func() error
+	walk = func() error {
+		t, e := d.Token()
+		if e != nil {
+			return e
+		}
+		delim, ok := t.(json.Delim)
+		if !ok {
+			return nil
+		}
+		switch delim {
+		case '{':
+			seen := map[string]bool{}
+			for d.More() {
+				key, e := d.Token()
+				if e != nil {
+					return e
+				}
+				s, ok := key.(string)
+				if !ok || seen[s] {
+					return fmt.Errorf("duplicate/invalid JSON member")
+				}
+				seen[s] = true
+				if e := walk(); e != nil {
+					return e
+				}
+			}
+		case '[':
+			for d.More() {
+				if e := walk(); e != nil {
+					return e
+				}
+			}
+		default:
+			return fmt.Errorf("unexpected delimiter")
+		}
+		_, e = d.Token()
+		return e
+	}
+	return walk()
+}
 func Decode(p []byte, v any) error {
+	if e := uniqueJSON(p); e != nil {
+		return e
+	}
 	d := json.NewDecoder(bytes.NewReader(p))
 	d.DisallowUnknownFields()
 	if e := d.Decode(v); e != nil {
@@ -63,15 +112,12 @@ func Read(root string) (Manifest, []Case, error) {
 	if e = Decode(b, &m); e != nil {
 		return m, nil, e
 	}
-	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r15" || len(m.Cases) == 0 {
+	if m.Format != "totipo-vector-manifest-v1" || m.Protocol != "totipo-v1" || m.Revision != "r16" || len(m.Cases) == 0 {
 		return m, nil, fmt.Errorf("invalid manifest header or empty corpus")
 	}
 	seen, paths := map[string]bool{}, map[string]bool{}
 	cases := []Case{}
 	for _, entry := range m.Cases {
-		if err := entry.Applicability.Validate(); err != nil {
-			return m, nil, fmt.Errorf("%s: %w", entry.ID, err)
-		}
 		if !idPattern.MatchString(entry.ID) || seen[entry.ID] || paths[entry.Path] || entry.Category == "" || !entry.Normative || len(entry.Sections) == 0 || entry.Expected == "" || !hashPattern.MatchString(entry.SHA256) {
 			return m, nil, fmt.Errorf("invalid/duplicate manifest entry %q", entry.ID)
 		}
@@ -141,94 +187,7 @@ func Read(root string) (Manifest, []Case, error) {
 		return m, nil, err
 	}
 
-	if e := resolveRecovery(cases); e != nil {
-		return m, nil, e
-	}
-	if e := resolveStorage(cases); e != nil {
-		return m, nil, e
-	}
 	return m, cases, nil
-}
-func ValidateShape(c Case, kind string) error {
-	if c.Operation == "local" {
-		if kind != "semantic" || c.Expected != "PASS" || c.Local == nil || len(c.Local.Trials) == 0 {
-			return fmt.Errorf("invalid local case")
-		}
-		return nil
-	}
-	if c.Local != nil {
-		return fmt.Errorf("unexpected local payload")
-	}
-
-	if c.Operation == "late-provenance" {
-		if kind != "semantic" || c.Expected != "PASS" || c.LateProvenance == nil || c.LateProvenance.Fixture == "" || len(c.LateProvenance.Trials) == 0 {
-			return fmt.Errorf("invalid late provenance payload")
-		}
-		return nil
-	}
-	if c.LateProvenance != nil {
-		return fmt.Errorf("unexpected provenance payload")
-	}
-
-	if c.Operation == "signature-context" || c.Operation == "publication" {
-		if c.Expected != "PASS" || c.Crypto != nil || c.Graph != nil || c.Storage != nil || c.TOTP != nil || c.Size != nil || c.Bootstrap != nil || c.Future != nil || c.Root != "" || c.Semantic != "" {
-			return fmt.Errorf("mixed hardening payload")
-		}
-		if c.Operation == "signature-context" {
-			if kind != "bytes" || c.Context == nil || c.Input == nil || c.PublicKey == "" || c.Publication != nil {
-				return fmt.Errorf("invalid signature context payload")
-			}
-		} else if kind != "semantic" || c.Publication == nil || len(c.Publication.Events) == 0 || c.Context != nil || c.Input != nil || c.PublicKey != "" {
-			return fmt.Errorf("invalid publication payload")
-		}
-		return nil
-	}
-	if c.Context != nil || c.Publication != nil {
-		return fmt.Errorf("unexpected hardening payload")
-	}
-
-	if c.Operation != "storage" && c.Storage != nil {
-		return fmt.Errorf("unexpected storage payload")
-	}
-	if c.Operation == "storage" {
-		if kind != "semantic" || c.Expected != "PASS" || c.Storage == nil || c.Storage.Notes == "" || c.Storage.NamespaceKind != "directory" || len(c.Storage.Entries) == 0 || c.Input != nil || c.Crypto != nil || c.Future != nil || c.Size != nil || c.Bootstrap != nil || c.Graph != nil || c.TOTP != nil || c.Semantic != "" || c.Root != "" || c.PublicKey != "" {
-			return fmt.Errorf("invalid storage payload")
-		}
-		return nil
-	}
-	if c.Operation != "totp" && c.TOTP != nil {
-		return fmt.Errorf("unexpected TOTP payload")
-	}
-	switch c.Operation {
-	case "dispatch", "crypto":
-		if c.Semantic == "" || c.Root == "" || c.Crypto == nil || c.Graph != nil || c.Size != nil || c.Bootstrap != nil {
-			return fmt.Errorf("missing envelope or mixed case payload")
-		}
-	case "provenance":
-		if c.Input == nil || c.Root == "" || c.Crypto != nil || c.Graph != nil || c.Size != nil || c.Bootstrap != nil {
-			return fmt.Errorf("invalid provenance payload")
-		}
-	case "size":
-		if c.Input == nil || c.Size == nil || c.Crypto != nil || c.Graph != nil || c.Bootstrap != nil {
-			return fmt.Errorf("invalid size payload")
-		}
-	case "bootstrap":
-		if c.Bootstrap == nil || c.Root == "" || c.Crypto != nil || c.Graph != nil || c.Size != nil {
-			return fmt.Errorf("invalid bootstrap payload")
-		}
-	case "graph":
-		if kind != "semantic" || c.Graph == nil || len(c.Graph.Steps) == 0 || c.Crypto != nil || c.Size != nil || c.Bootstrap != nil || c.Input != nil {
-			return fmt.Errorf("invalid graph payload")
-		}
-	case "totp":
-		if kind != "bytes" || c.Expected != "PASS" || c.TOTP == nil || len(c.TOTP.Rows) == 0 || c.TOTP.Source == "" || c.TOTP.Notes == "" || c.TOTP.T0 != 0 || c.Input != nil || c.Crypto != nil || c.Future != nil || c.Size != nil || c.Bootstrap != nil || c.Graph != nil || c.Semantic != "" || c.Root != "" || c.PublicKey != "" {
-			return fmt.Errorf("invalid TOTP payload")
-		}
-
-	default:
-		return fmt.Errorf("unknown operation %q", c.Operation)
-	}
-	return nil
 }
 func VerifyProfile(root string, m Manifest) error {
 	p := Profile{}
@@ -239,7 +198,7 @@ func VerifyProfile(root string, m Manifest) error {
 	if e = Decode(b, &p); e != nil {
 		return e
 	}
-	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r15" {
+	if p.Format != "totipo-requirements-v1" || p.Status != "moving-pre-rc" || p.Protocol != "totipo-v1" || p.Revision != "r16" {
 		return fmt.Errorf("invalid moving profile")
 	}
 	for file, want := range map[string]string{"vectors/manifest.json": p.ManifestSHA256, "spec/totipo-vault-format-v1.md": p.SpecSHA256, "vectors/manifest.schema.json": p.SchemaSHA256, "vectors/case.schema.json": p.CaseSchemaSHA256} {
@@ -251,114 +210,214 @@ func VerifyProfile(root string, m Manifest) error {
 			return fmt.Errorf("profile checksum mismatch: %s", file)
 		}
 	}
-	baseline := map[string]string{}
+	want := map[string]string{}
 	for _, entry := range m.Cases {
-		if err := entry.Applicability.Validate(); err != nil {
-			return err
-		}
-		if entry.Applicability.Kind == "baseline" {
-			baseline[entry.ID] = entry.SHA256
-		}
+		want[entry.ID] = entry.SHA256
 	}
-	if len(p.Required) != len(baseline) {
-		return fmt.Errorf("profile must contain exactly manifest baseline cases")
+	if len(p.Required) != len(want) {
+		return fmt.Errorf("profile case count mismatch")
 	}
 	for _, pin := range p.Required {
-		want, ok := baseline[pin.ID]
-		if !ok || pin.SHA256 != want {
-			return fmt.Errorf("profile baseline case mismatch: %s", pin.ID)
+		if want[pin.ID] != pin.SHA256 {
+			return fmt.Errorf("profile case mismatch %s", pin.ID)
 		}
-		delete(baseline, pin.ID)
+		delete(want, pin.ID)
 	}
-
 	return nil
 }
-func Run(c Case) error { return RunWithCapabilities(c, nil) }
-func RunWithCapabilities(c Case, capabilities []string) error {
-	if err := validateCapabilities(capabilities); err != nil {
-		return err
+func ValidateShape(c Case, kind string) error {
+	payloads := 0
+	for _, present := range []bool{c.PostAEAD != nil, c.Crypto != nil, c.Bootstrap != nil, c.TOTP != nil, c.Graph != nil, c.Fold != nil, c.Storage != nil, c.Workflow != nil} {
+		if present {
+			payloads++
+		}
 	}
-
+	if payloads != 1 {
+		return fmt.Errorf("exactly one operation payload required")
+	}
+	ok := false
 	switch c.Operation {
-	case "local":
-		return runLocal(c)
-	case "signature-context":
-		return runSignatureContext(c)
-	case "publication":
-		return runPublication(c)
-	case "storage":
-		return runStorage(c)
+	case "crypto", "dispatch":
+		if (c.Operation == "crypto") != (c.Input != nil) {
+			return fmt.Errorf("input/operation mismatch")
+		}
+		ok = c.Crypto != nil && c.Root != "" && c.Semantic != "" && (c.Expected == object.Supported || c.Expected == object.Invalid)
+	case "post-aead":
+		ok = c.PostAEAD != nil && c.Root != "" && c.Semantic != "" && c.Input == nil && c.Expected == storage.InvalidStorage
+	case "bootstrap":
+		ok = c.Bootstrap != nil && c.Root != "" && c.Expected == "VALID"
 	case "totp":
-		return runTOTP(c)
-	case "dispatch", "crypto":
+		ok = c.TOTP != nil && len(c.TOTP.Rows) > 0 && c.TOTP.T0 == 0 && c.Expected == "PASS"
+	case "graph":
+		ok = c.Graph != nil && len(c.Graph.Steps) > 0 && c.Expected == "PASS"
+	case "fold":
+		ok = c.Fold != nil && len(c.Fold.StageIDs) > 0 && len(c.Fold.StageIDs) == len(c.Fold.Parents) && c.Expected == "PASS"
+	case "storage":
+		ok = c.Storage != nil && c.Root != "" && c.Expected == "PASS"
+	case "workflow":
+		ok = c.Workflow != nil && c.Expected == "PASS"
+	}
+	if !ok {
+		return fmt.Errorf("invalid %s payload", c.Operation)
+	}
+	if (c.Input != nil || c.Semantic != "") && c.Crypto == nil && c.PostAEAD == nil {
+		return fmt.Errorf("unexpected semantic input")
+	}
+	if c.Root != "" && c.Crypto == nil && c.Bootstrap == nil && c.Storage == nil && c.PostAEAD == nil {
+		return fmt.Errorf("unexpected root")
+	}
+	wantKind := "semantic"
+	if c.Crypto != nil || c.Bootstrap != nil || c.TOTP != nil {
+		wantKind = "bytes"
+	}
+	if c.Expected == object.Invalid || c.PostAEAD != nil {
+		wantKind = "negative"
+	}
+	if kind != wantKind {
+		return fmt.Errorf("wrong kind")
+	}
+	return nil
+}
+func Run(c Case) error {
+	switch c.Operation {
+	case "post-aead":
+		return runPostAEAD(c)
+	case "crypto", "dispatch":
 		return runEnvelope(c)
-	case "size":
-		n, e := c.Input.ReservedSize()
-		if e != nil {
-			return e
-		}
-		f, e := c.Input.FanIn()
-		if e != nil {
-			return e
-		}
-		if n != c.Size.Reserved || f != c.Size.FanIn || (n <= object.Capacity) != c.Size.Fits {
-			return fmt.Errorf("capacity mismatch")
-		}
-		want := "FOLD"
-		if c.Size.Fits {
-			want = "FITS"
-		}
-		if c.Expected != want {
-			return fmt.Errorf("size outcome mismatch")
-		}
-		if len(c.Input.Signature) > 0 {
-			root, e := unhex(c.Root)
-			if e != nil {
-				return e
-			}
-			k, e := cryptov1.Derive(root)
-			if e != nil {
-				return e
-			}
-			pub, e := unhex(c.PublicKey)
-			if e != nil {
-				return e
-			}
-			if k.Provenance(*c.Input, pub) != "VERIFIED" {
-				return fmt.Errorf("capacity fixture signature invalid")
-			}
-			p, e := c.Input.Encode()
-			if e != nil {
-				return e
-			}
-			if len(p) > object.Capacity || c.Size.Fits {
-				return fmt.Errorf("short DER fixture must physically fit but fail planning")
-			}
-		}
-		return nil
-	case "provenance":
-		r, e := unhex(c.Root)
-		if e != nil {
-			return e
-		}
-		k, e := cryptov1.Derive(r)
-		if e != nil {
-			return e
-		}
-		p, e := unhex(c.PublicKey)
-		if e != nil {
-			return e
-		}
-		if k.Provenance(*c.Input, p) != c.Expected {
-			return fmt.Errorf("provenance mismatch")
-		}
-		return nil
 	case "bootstrap":
 		return runBootstrap(c)
-	case "late-provenance":
-		return runLateProvenance(c)
+	case "totp":
+		return runTOTP(c)
 	case "graph":
-		return runGraph(c, len(capabilities) > 0)
+		s := graph.New()
+		for _, step := range c.Graph.Steps {
+			switch step.Action {
+			case "add":
+				if step.Node == nil {
+					return fmt.Errorf("missing node")
+				}
+				e := s.Add(*step.Node)
+				if (e != nil) != step.IntegrityError {
+					return fmt.Errorf("integrity result")
+				}
+			case "remove":
+				s.Remove(step.ID)
+			case "evaluate":
+				if step.Want == nil || !reflect.DeepEqual(s.Evaluate(step.Identity), *step.Want) {
+					return fmt.Errorf("graph: got %+v want %+v", s.Evaluate(step.Identity), step.Want)
+				}
+			default:
+				return fmt.Errorf("unknown graph action")
+			}
+		}
+		return nil
+	case "fold":
+		f := c.Fold
+		ids := [][]byte{}
+		for _, id := range f.Frontier {
+			b, e := unhex(id)
+			if e != nil {
+				return e
+			}
+			ids = append(ids, b)
+		}
+		i := 0
+		_, e := graph.FoldObjects(ids, f.Token, func(stage object.Object) ([]byte, error) {
+			parents := stage.Parents
+			p, e := stage.Encode()
+			if e != nil {
+				return nil, e
+			}
+			_, decoded := object.Dispatch(p)
+			if !bytes.Equal(decoded.ValueBytes(), f.Token.ValueBytes()) || !bytes.Equal(decoded.Identity, f.Token.Identity) ||
+				!reflect.DeepEqual(decoded.ClientName, f.Token.ClientName) || !reflect.DeepEqual(decoded.ClientTime, f.Token.ClientTime) {
+				return nil, fmt.Errorf("fold changed operation value or metadata")
+			}
+			if i >= len(f.Parents) {
+				return nil, fmt.Errorf("extra stage")
+			}
+			got := []string{}
+			for _, p := range parents {
+				got = append(got, hex.EncodeToString(p))
+			}
+			if !reflect.DeepEqual(got, f.Parents[i]) {
+				return nil, fmt.Errorf("fold parents")
+			}
+			id, e := unhex(f.StageIDs[i])
+			i++
+			return id, e
+		})
+		if e != nil {
+			return e
+		}
+		if i != len(f.StageIDs) {
+			return fmt.Errorf("missing stage")
+		}
+		return nil
+	case "storage":
+		root, e := unhex(c.Root)
+		if e != nil {
+			return e
+		}
+		k, e := cryptov1.Derive(root)
+		if e != nil {
+			return e
+		}
+		entries := []storage.Entry{}
+		for _, entry := range c.Storage.Entries {
+			b, e := unhex(entry.Object)
+			if e != nil {
+				return e
+			}
+			entries = append(entries, storage.Entry{Path: entry.Path, Kind: entry.Kind, Read: func() ([]byte, error) {
+				if entry.Unreadable {
+					return nil, fmt.Errorf("unreadable")
+				}
+				return b, nil
+			}})
+		}
+		obs, err := storage.Scan(c.Storage.NamespaceKind, entries, k)
+		classes := []string{}
+		for _, o := range obs {
+			classes = append(classes, o.Class)
+		}
+		if (err != nil) != c.Storage.Diagnostics || !reflect.DeepEqual(classes, c.Storage.Classes) {
+			return fmt.Errorf("storage diagnostics/classes mismatch")
+		}
+		return nil
+	case "workflow":
+		w := c.Workflow
+		existing, e := unhex(w.Existing)
+		if e != nil {
+			return e
+		}
+		intended, e := unhex(w.Intended)
+		if e != nil {
+			return e
+		}
+		base, e := unhex(w.Base)
+		if e != nil {
+			return e
+		}
+		var result string
+		switch w.Action {
+		case "publish":
+			var after []byte
+			after, result = storage.Install(existing, intended, w.Kind, w.Durable)
+			if result != "PUBLISHED_NEW" && !bytes.Equal(after, existing) {
+				return fmt.Errorf("existing mutated")
+			}
+		case "create":
+			result = storage.Create(w.Kind, w.Complete, w.Durable)
+		case "replace":
+			result = storage.Replace(base, existing, w.Kind, w.Readable, w.Complete, w.Durable)
+		default:
+			return fmt.Errorf("unknown workflow")
+		}
+		if result != w.Result {
+			return fmt.Errorf("workflow: %s != %s", result, w.Result)
+		}
+		return nil
 	}
 	return fmt.Errorf("unknown operation")
 }
@@ -375,19 +434,6 @@ func runEnvelope(c Case) error {
 	if e != nil {
 		return e
 	}
-	if c.Future != nil {
-		prefix, e := c.Future.Routing.Encode()
-		if e != nil {
-			return e
-		}
-		tail, e := unhex(c.Future.Tail)
-		if e != nil {
-			return e
-		}
-		if c.Future.Routing.Version == 1 || !bytes.Equal(append(prefix, tail...), p) {
-			return fmt.Errorf("future fixture fields mismatch")
-		}
-	}
 	x := c.Crypto
 	id, b, e := k.Seal(p)
 	if e != nil {
@@ -397,20 +443,21 @@ func runEnvelope(c Case) error {
 		return fmt.Errorf("object ID mismatch")
 	}
 	rawID, _ := unhex(id)
-	plain, _ := cryptov1.Padded(p)
-	checks := []struct {
+	padded, _ := cryptov1.Padded(p)
+	for _, check := range []struct {
 		name, want string
 		got        []byte
 	}{
-		{"object", x.Object, b}, {"id key", x.IDKey, k.ID}, {"object root", x.ObjectRootKey, k.ObjectRoot}, {"signature context", x.SignatureContext, k.SignatureContext}, {"object key", x.ObjectKey, k.ObjectKey(rawID)}, {"nonce", x.Nonce, rawID[:12]}, {"AAD", x.AAD, cryptov1.AAD(rawID)}, {"padding", x.Padded, plain}, {"ciphertext", x.Ciphertext, b[:1008]}, {"tag", x.Tag, b[1008:]},
-	}
-	for _, check := range checks {
+		{"object", x.Object, b}, {"id key", x.IDKey, k.ID}, {"object root", x.ObjectRootKey, k.ObjectRoot},
+		{"object key", x.ObjectKey, k.ObjectKey(rawID)}, {"nonce", x.Nonce, rawID[:12]}, {"AAD", x.AAD, cryptov1.AAD(rawID)},
+		{"padding", x.Padded, padded}, {"ciphertext", x.Ciphertext, b[:1008]}, {"tag", x.Tag, b[1008:]},
+	} {
 		if e := equalHex(check.name, check.want, check.got); e != nil {
 			return e
 		}
 	}
-	if x.SemanticLength != len(p) {
-		return fmt.Errorf("semantic length mismatch")
+	if len(p) != x.SemanticLength {
+		return fmt.Errorf("semantic length")
 	}
 	fixture, e := unhex(x.Object)
 	if e != nil {
@@ -421,11 +468,11 @@ func runEnvelope(c Case) error {
 		return e
 	}
 	if !bytes.Equal(opened, p) {
-		return fmt.Errorf("roundtrip mismatch")
+		return fmt.Errorf("roundtrip")
 	}
 	class, o := object.Dispatch(opened)
 	if class != c.Expected {
-		return fmt.Errorf("dispatch: got %s want %s", class, c.Expected)
+		return fmt.Errorf("grammar: %s != %s", class, c.Expected)
 	}
 	if c.Input != nil {
 		encoded, e := c.Input.Encode()
@@ -433,227 +480,74 @@ func runEnvelope(c Case) error {
 			return e
 		}
 		if !bytes.Equal(encoded, p) {
-			return fmt.Errorf("field encoding mismatch")
+			return fmt.Errorf("field encoding")
 		}
-		if !reflect.DeepEqual(o, c.Input) { // nil and empty byte arrays are semantically identical; compare canonical encodings.
-			parsed, e := o.Encode()
-			if e != nil || !bytes.Equal(parsed, encoded) {
-				return fmt.Errorf("parsed object mismatch")
-			}
-		}
-	}
-	if x.Unsigned != "" {
-		if o == nil || class != object.Supported {
-			return fmt.Errorf("signed fixture not supported")
-		}
-		u, e := o.Unsigned()
-		if e != nil {
-			return e
-		}
-		if e = equalHex("unsigned", x.Unsigned, u); e != nil {
-			return e
-		}
-		in, e := k.SignatureInput(*o)
-		if e != nil {
-			return e
-		}
-		if e = equalHex("signature input", x.SignatureInput, in); e != nil {
-			return e
-		}
-		if e = equalHex("signature", x.Signature, o.Signature); e != nil {
-			return e
-		}
-		pub, e := unhex(x.PublicKey)
-		if e != nil {
-			return e
-		}
-		if k.Provenance(*o, pub) != "VERIFIED" {
-			return fmt.Errorf("fixed signature rejected")
+		again, e := o.Encode()
+		if e != nil || !bytes.Equal(again, p) {
+			return fmt.Errorf("canonical roundtrip")
 		}
 	}
 	return nil
 }
 func runBootstrap(c Case) error {
 	x := c.Bootstrap
-	decode := func(s string) []byte { b, _ := unhex(s); return b }
-	for _, s := range []string{c.Root, x.Password, x.Salt, x.Nonce, x.WrapKey, x.Header, x.Record, x.Binding} {
-		if _, e := unhex(s); e != nil {
+	fields := []string{c.Root, x.Password, x.Salt, x.Nonce, x.Record}
+	b := [][]byte{}
+	for _, s := range fields {
+		v, e := unhex(s)
+		if e != nil {
 			return e
 		}
+		b = append(b, v)
 	}
-	root := decode(c.Root)
-	record, e := cryptov1.Wrap(decode(x.Password), root, decode(x.Salt), decode(x.Nonce))
+	root, password, salt, nonce, record := b[0], b[1], b[2], b[3], b[4]
+	wrapped, e := cryptov1.Wrap(password, root, salt, nonce)
 	if e != nil {
 		return e
 	}
-	if c.Expected != "VALID" {
-		return fmt.Errorf("bootstrap expectation")
+	if !bytes.Equal(wrapped, record) {
+		return fmt.Errorf("wrap")
 	}
-	key, e := cryptov1.WrapKey(decode(x.Password), decode(x.Salt))
+	recovered, e := cryptov1.Unwrap(password, record)
 	if e != nil {
 		return e
 	}
-	binding, e := cryptov1.Binding(root)
+	if !bytes.Equal(root, recovered) {
+		return fmt.Errorf("unwrap")
+	}
+	key, e := cryptov1.WrapKey(password, salt)
 	if e != nil {
 		return e
 	}
-	for _, v := range []struct {
+	fp, _ := cryptov1.Fingerprint(root)
+	for _, check := range []struct {
 		name, want string
 		got        []byte
-	}{{"record", x.Record, record}, {"header", x.Header, record[:39]}, {"wrap key", x.WrapKey, key}, {"binding", x.Binding, binding}} {
-		if e = equalHex(v.name, v.want, v.got); e != nil {
+	}{{"wrap key", x.WrapKey, key}, {"header", x.Header, record[:39]}, {"fingerprint", x.Fingerprint, fp}} {
+		if e := equalHex(check.name, check.want, check.got); e != nil {
 			return e
 		}
 	}
-	opened, e := cryptov1.Unwrap(decode(x.Password), decode(x.Record))
-	if e != nil {
-		return e
-	}
-	if !bytes.Equal(opened, root) {
-		return fmt.Errorf("root unwrap mismatch")
-	}
 	return nil
 }
-func runGraph(c Case, advisoryHistory bool) error {
-	s := graph.New()
-	var plan *graph.Plan
-	checks := 0
-	for i, step := range c.Graph.Steps {
-		var e error
-		switch step.Action {
-		case "remember", "history-lost", "history-clear", "cache-write-fails":
-			if !advisoryHistory {
-				return fmt.Errorf("%s requires capability=advisory-history", step.Action)
-			}
-		}
-		switch step.Action {
-		case "plan":
-			if step.Node == nil || step.Value == nil || step.Success == nil {
-				return fmt.Errorf("missing plan inputs")
-			}
-			var err error
-			plan, err = s.Plan(*step.Node, *step.Value, step.Intent, step.Flag)
-			if (err == nil) != *step.Success {
-				return fmt.Errorf("step %d plan result", i)
-			}
-			if plan != nil && !reflect.DeepEqual(plan.Node.Parents, step.Parents) {
-				return fmt.Errorf("step %d parent choice: %v", i, plan.Node.Parents)
-			}
-			checks++
-		case "publish":
-			if plan == nil || step.Success == nil {
-				return fmt.Errorf("missing plan/publication expectation")
-			}
-			if plan.Publish(s, step.Flag) != *step.Success {
-				return fmt.Errorf("step %d publication result", i)
-			}
-			checks++
-		case "learn", "cache-write-fails":
-			if step.Node == nil {
-				return fmt.Errorf("missing node")
-			}
-			e = s.Learn(*step.Node, step.Value)
-			if step.Action == "cache-write-fails" {
-				s.CacheWriteFailed = true
-			}
-		case "disappear":
-			s.Disappear(step.ID)
-		case "remote-unavailable":
-			switch step.Reason {
-			case "absent", "unreadable", "wrong-size", "aead", "padding", "object-id":
-			default:
-				return fmt.Errorf("unknown remote failure")
-			}
-			s.RemoteUnavailable(step.ID)
-		case "optional-cache-failure":
-			// Hypothetical non-authoritative failure notification; baseline requires
-			// only that it cannot revoke publication. No diagnostic API is required.
-		case "history-clear":
-			s.ClearHistory()
-		case "history-lost":
-			s.LoseHistory()
-		case "remember":
-			s.Remember()
-		case "rename":
-			if step.Node == nil || step.Value == nil || step.Success == nil {
-				return fmt.Errorf("missing rename input")
-			}
-			if s.Rename(*step.Node, *step.Value) != *step.Success {
-				return fmt.Errorf("rename result mismatch")
-			}
-			checks++
-		case "state-query":
-			if step.StateWant == nil || step.Query == nil {
-				return fmt.Errorf("missing state expectation")
-			}
-			got := StateExpected{Known: []string{}, DeviceHeads: s.Heads("DEVICE", step.Query.Device), Parents: []string{}, IntegrityOK: !s.IntegrityFailure}
-			for id := range s.Nodes {
-				got.Known = append(got.Known, id)
-			}
-			sort.Strings(got.Known)
-			got.Parents = append(got.Parents, s.Nodes[step.ID].Parents...)
-			if !reflect.DeepEqual(got, *step.StateWant) {
-				return fmt.Errorf("step %d state: got %+v want %+v", i, got, *step.StateWant)
-			}
-			checks++
-		case "discovery-incomplete":
-			s.DiscoveryIncomplete = step.Flag
-		case "query":
-			if step.Query == nil || step.Want == nil {
-				return fmt.Errorf("missing graph expectation")
-			}
-			q := step.Query
-			before, _ := json.Marshal(s)
-			got := s.Evaluate(q.Identity, q.Candidate, q.Device)
-			after, _ := json.Marshal(s)
-			if !bytes.Equal(before, after) {
-				return fmt.Errorf("query mutated state")
-			}
-			if !reflect.DeepEqual(got, *step.Want) {
-				return fmt.Errorf("step %d: got %+v want %+v", i, got, *step.Want)
-			}
-			checks++
-		default:
-			return fmt.Errorf("unknown graph action")
-		}
-		if plan != nil && step.Action != "publish" {
-			plan.Observe(s)
-		}
-		if (e != nil) != step.IntegrityError {
-			return fmt.Errorf("step %d integrity error: %v", i, e)
-		}
-	}
-	if checks == 0 || c.Expected != "PASS" {
-		return fmt.Errorf("no graph assertions or invalid expectation")
-	}
-	return nil
-}
-
 func runTOTP(c Case) error {
 	x := c.TOTP
-	if x.T0 != 0 || x.Period == 0 || len(x.Rows) == 0 {
-		return fmt.Errorf("invalid TOTP parameters")
-	}
 	secret, e := unhex(x.Secret)
 	if e != nil {
 		return e
 	}
-	for i, row := range x.Rows {
-		counter := row.UnixSeconds / uint64(x.Period)
-		if row.Counter != counter {
-			return fmt.Errorf("TOTP row %d counter mismatch", i)
-		}
-		var b [8]byte
-		binary.BigEndian.PutUint64(b[:], counter)
-		if e := equalHex("TOTP counter", row.CounterHex, b[:]); e != nil {
-			return e
-		}
+	for _, row := range x.Rows {
 		code, e := totp.Code(x.Algorithm, secret, x.Digits, x.Period, row.UnixSeconds)
 		if e != nil {
 			return e
 		}
-		if code != row.Code {
-			return fmt.Errorf("TOTP row %d code mismatch", i)
+		if code != row.Code || x.Period == 0 || row.Counter != row.UnixSeconds/uint64(x.Period) {
+			return fmt.Errorf("TOTP mismatch")
+		}
+		b := make([]byte, 8)
+		binary.BigEndian.PutUint64(b, row.Counter)
+		if e := equalHex("counter", row.CounterHex, b); e != nil {
+			return e
 		}
 	}
 	return nil
