@@ -705,7 +705,7 @@ The repository moving pre-RC requirements profile pins this specification, schem
 manifest, and exact required cases. It is not a frozen RC profile. Historical
 revision records do not confer compatibility with their old TOKEN bytes.
 
-The next work is to repin/reconcile `totipo-java` against r16 and evaluate what
+The next work is to repin/reconcile `totipo-java` against r17 and evaluate what
 existing implementation architecture/code should be kept, changed, simplified,
 or deleted. That work, platform/API selection, garbage collection, and future-family
 migration are outside this rewrite.
