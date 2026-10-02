@@ -43,6 +43,19 @@
                 python3
               ];
             })
+            (jailed-agents.lib.${system}.makeJailedPi {
+              fwdEnv = [ "GOPATH" "GOBIN" ];
+              extraPkgs = with pkgs; [
+                go
+                gnumake
+                gopls
+                golangci-lint
+                golangci-lint-langserver
+                libgcc
+                gcc
+                python3
+              ];
+            })
           ];
         };
       });
