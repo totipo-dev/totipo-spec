@@ -4,7 +4,7 @@
   "protocol": "totipo-v1",
   "spec_revision": "r17",
   "manifest_sha256": "94fff22842573e15b254bb0653970761c15cf122192947a36fccc48344a84f08",
-  "spec_sha256": "f8d2ab02c97e8ac54847048a06cb088359db982fec3f176fd473ce0f223d43cf",
+  "spec_sha256": "77c1ba4f19d88c22586fbd5b03cecf49e44460b0a8e85196ab088ed6824d9a88",
   "schema_sha256": "e7a5d8ec0392e0248ab867375b7c907a7ca1298595acdb14ecd3edcbe66df476",
   "case_schema_sha256": "d38618f53dcf0a558c389831e8838a07248066beff392812f3d277cc974e25c9",
   "required_cases": [
