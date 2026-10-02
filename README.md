@@ -54,8 +54,3 @@ threat-model clarification and unchanged 90-case corpus.
 The [r16 rewrite report](review/V1_R16_REWRITE_REPORT.md) records the baseline,
 five checkpoint hashes, per-case migration, and validation. Older reports remain
 historical evidence. No release candidate is frozen by this rewrite.
-
-Next: repin/reconcile `totipo-java` against r17 and evaluate what existing
-implementation architecture/code should be kept, changed, simplified, or deleted.
-An independent live implementation and platform durability evidence remain
-necessary before an RC freeze; this repository's model is not a production client.
