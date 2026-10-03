@@ -5,6 +5,8 @@ Historical revision entries are deliberately excluded from retired-term checks.
 Wire correctness is exercised by the conformance corpus, not prose fingerprints.
 """
 from pathlib import Path
+import hashlib
+import json
 import re
 
 s = Path('spec/totipo-vault-format-v1.md').read_text(encoding='utf-8')
@@ -99,4 +101,19 @@ for anchor in ('per-object metadata rule in Section 12',
                'portable corpus success alone does not establish application conformance',
                'No stronger atomic primitive is imposed by this scope'):
     assert anchor in scopes, anchor
-print('PASS: Totipo v1/r18 structural checks')
+# Hash raw bytes, including editorial history: a manual edit must invalidate the
+# moving profile even when all normative structural anchors still pass.
+profile = json.loads(Path('requirements/v1-pre-rc.json').read_bytes())
+for field, artifact in (
+    ('spec_sha256', 'spec/totipo-vault-format-v1.md'),
+    ('manifest_sha256', 'vectors/manifest.json'),
+    ('schema_sha256', 'vectors/manifest.schema.json'),
+    ('case_schema_sha256', 'vectors/case.schema.json'),
+):
+    actual = hashlib.sha256(Path(artifact).read_bytes()).hexdigest()
+    if profile.get(field) != actual:
+        raise SystemExit(
+            f'FAIL: requirements/v1-pre-rc.json {field} mismatch for {artifact}: '
+            f'profile={profile.get(field)!r}, actual={actual}; '
+            'regenerate with go run ./conformance/cmd/generate-vectors -root .')
+print('PASS: Totipo v1/r18 structural checks and profile artifact hashes')

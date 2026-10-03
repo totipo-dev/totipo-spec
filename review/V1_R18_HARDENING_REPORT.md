@@ -1,6 +1,23 @@
 # v1/r18 hardening report
 
-## Summary
+## Integrity repair addendum
+
+The current committed r18 baseline is `de1c9e2cb60005db140ef6ba15f1856be2da0c87`
+on authoritative `totipo-org/totipo-spec` main. A final editorial edit to the r18
+revision-history wording occurred after the previous profile regeneration,
+leaving `spec_sha256` stale. The earlier validation below covered the preceding
+draft, not the final committed bytes; its profile-consistency claim did not hold
+for committed r18. This repair synchronizes generated integrity metadata with
+the already-committed normative r18 specification. It is not a protocol revision.
+The intentional final revision-history wording remains byte-identical to HEAD.
+
+See [the integrity repair report](V1_R18_INTEGRITY_REPAIR_REPORT.md) for the
+independent hash audit, regression tests, and current validation results.
+Only the profile spec pin changes among generated artifacts. All 90 cases,
+expected outcomes, manifest entries, required-case pins, and corpus digest remain
+unchanged. No normative protocol or application behavior changes in this repair.
+
+## Summary (original r18 hardening)
 
 r18 is an application-safety, conformance-scope, compromise-recovery, and editorial
 hardening revision. It intentionally strengthens application requirements without
@@ -92,8 +109,9 @@ The explicit established generator updated these artifacts. A subsequent run
 compared SHA-256 for every vector file and the profile before/after and produced
 no differences or new files.
 
-The following suite and baseline audit were rerun for the final wording review.
-The final generator was run twice with no further diff on the second run.
+The following historical suite covered the pre-final-edit draft. It did not
+establish integrity of the subsequently committed revision-history bytes.
+Current repair validation is recorded in the linked repair report.
 
 | Command/check | Result |
 | --- | --- |
@@ -134,12 +152,12 @@ a development shell/formatter, not a separate flake checks suite. Cross-platform
 CI and real provider crash tests were not run locally; abstract storage cases do
 not establish live backend durability or application UI behavior.
 
-Final wording-review SHA-256 values:
+Corrected SHA-256 values for the committed spec and regenerated profile:
 
 | Artifact | SHA-256 |
 | --- | --- |
-| `spec/totipo-vault-format-v1.md` | `e413b142adbbb080eb8d8a825226e084e55ae75fd2685bc8bcb980a8768dadb1` |
-| `requirements/v1-pre-rc.json` | `6ff8c082f0bf26e7de0e396f4846992d237f7e08d5abbb80b124a4647f0a0ef6` |
+| `spec/totipo-vault-format-v1.md` | `8a357e75f3ddd92efa954fde2ffc9af33f40a2c2396d6afbf1d5de5f00bc4f8a` |
+| `requirements/v1-pre-rc.json` | `4c7954cd2b59aa0afbbe3c22080cadddf72135d884b186a671266c29d58418df` |
 
 Relative to the preceding uncommitted r18 draft, the only regenerated artifact
 change is the profile’s `spec_sha256`; all vector artifacts remain unchanged.
@@ -155,7 +173,7 @@ audit tools were preserved. The structure checker now verifies r1–r15 entries 
 the linked archive and r16–r18 entries in the spec, retaining all existing protocol
 anchors and retired-concept checks. No corpus capability selection was introduced.
 
-## Files changed
+## Files changed in original r18 hardening
 
 | File | Reason |
 | --- | --- |
@@ -193,57 +211,36 @@ an application-conformance claim. These application changes are intentionally
 stronger even though portable semantics are unchanged.
 
 Nix availability, independent interoperability, actual UI behavior, and live
-platform durability remain outside the evidence collected here. No known portable
-semantic discrepancy or failing validation remains. All changes await review in
-the uncommitted worktree.
+platform durability remain outside the evidence collected here. The original hardening was subsequently committed. The integrity repair changes
+remain uncommitted for review; see the current validation record linked above.
+
+## Current repair validation
+
+`python3 tools/check_spec.py`, `make check` (13 Python tests and Go tests),
+`make conformance` (90/90), `make verify`, and `make race` passed.
+The independent byte/hash audit and generator second-run idempotence passed.
+The new checker rejects stale/missing pins and actual byte changes for all four
+artifacts. Vet and Go formatting passed. The first `make fuzz` attempt ended
+with a FuzzDispatch deadline error; an unchanged retry passed all three targets.
+Nix is unavailable. Full command results are recorded in the repair report.
 
 ## `git diff --stat`
 
-Git excludes the two untracked added review documents from this stat.
+Current repair against committed HEAD; untracked files are excluded by Git.
 
 ```text
- CONTRIBUTING.md                             |   2 +-
- Makefile                                    |   2 +-
- README.md                                   |   4 +-
- conformance/README.md                       |   7 +-
- conformance/cmd/generate-vectors/main.go    |   8 +-
- conformance/cmd/totipo-conformance/main.go  |   4 +-
- conformance/internal/vectors/runner.go      |   4 +-
- conformance/internal/vectors/runner_test.go |   2 +-
- conformance/internal/vectors/types.go       |   2 +-
- requirements/README.md                      |   2 +-
- requirements/v1-pre-rc.json                 |   8 +-
- spec/totipo-vault-format-v1.md              | 466 +++++++++-------------------
- tools/check_spec.py                         |  40 ++-
- vectors/FORMAT.md                           |   4 +-
- vectors/README.md                           |   2 +-
- vectors/manifest.json                       |   2 +-
- vectors/manifest.schema.json                |   2 +-
- 17 files changed, 210 insertions(+), 351 deletions(-)
+ requirements/v1-pre-rc.json       |  2 +-
+ review/V1_R18_HARDENING_REPORT.md | 93 +++++++++++++++++++--------------------
+ tools/check_spec.py               | 19 +++++++-
+ 3 files changed, 64 insertions(+), 50 deletions(-)
 ```
 
 ## `git status --short`
 
-Final uncommitted status:
-
 ```text
- M CONTRIBUTING.md
- M Makefile
- M README.md
- M conformance/README.md
- M conformance/cmd/generate-vectors/main.go
- M conformance/cmd/totipo-conformance/main.go
- M conformance/internal/vectors/runner.go
- M conformance/internal/vectors/runner_test.go
- M conformance/internal/vectors/types.go
- M requirements/README.md
  M requirements/v1-pre-rc.json
- M spec/totipo-vault-format-v1.md
+ M review/V1_R18_HARDENING_REPORT.md
  M tools/check_spec.py
- M vectors/FORMAT.md
- M vectors/README.md
- M vectors/manifest.json
- M vectors/manifest.schema.json
-?? review/V1_PRE_R16_REVISION_HISTORY.md
-?? review/V1_R18_HARDENING_REPORT.md
+?? review/V1_R18_INTEGRITY_REPAIR_REPORT.md
+?? tools/test_check_spec.py
 ```
