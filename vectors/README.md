@@ -1,4 +1,4 @@
-# v1/r17 conformance vectors
+# v1/r18 conformance vectors
 
 The [manifest](manifest.json) lists the complete current corpus, with exact paths,
 SHA-256 hashes, kinds, expected outcomes, and specification sections. Every case

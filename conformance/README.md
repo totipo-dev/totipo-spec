@@ -1,9 +1,12 @@
-# Go v1/r17 reference/conformance consumer
+# Go v1/r18 reference/conformance consumer
 
 This Go 1.23+ module is the repository's reference consumer, not a production client.
 Run `make check`, `make race`, and `make fuzz` from the repository root. The CLI
 accepts `-root /path/to/repository` and `-verify-only`. Every manifest case is
-required; there is no optional capability selection.
+required; there is no optional capability selection. These cases provide core
+protocol and modeled store-operation evidence under the specification’s Section 20
+scopes. Passing them does not establish application conformance or live backend
+crash durability.
 
 Packages separate TLV framing, exact TOKEN grammar, object/root cryptography,
 TOTP computation, causal-equivalence graph evaluation, and storage outcomes.

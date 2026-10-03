@@ -3,7 +3,7 @@
 Totipo is an encrypted, append-only TOTP vault format operating on a configured
 durable store. Synchronization is optional and external.
 
-The current normative specification is **v1/r17**, a design draft with moving
+The current normative specification is **v1/r18**, a design draft with moving
 pre-release-candidate conformance evidence:
 [Totipo Vault Format v1](spec/totipo-vault-format-v1.md).
 
@@ -49,6 +49,8 @@ case hashes, physical case coverage, and exact requirements pins. Normal checks
 never regenerate fixtures. Make uses a writable Go cache under `.direnv/`.
 See the [case contract](vectors/FORMAT.md) and [Go consumer](conformance/README.md).
 
+The [r18 hardening report](review/V1_R18_HARDENING_REPORT.md) records application
+safety, conformance scopes, editorial cleanup, and the unchanged portable corpus.
 The [r17 clarification report](review/V1_R17_HARDENING_REPORT.md) records the
 threat-model clarification and unchanged 90-case corpus.
 The [r16 rewrite report](review/V1_R16_REWRITE_REPORT.md) records the baseline,

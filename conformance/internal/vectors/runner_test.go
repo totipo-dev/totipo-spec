@@ -43,7 +43,7 @@ func TestManifestTampering(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	b = []byte(strings.Replace(string(b), `"r17"`, `"r99"`, 1))
+	b = []byte(strings.Replace(string(b), `"r18"`, `"r99"`, 1))
 	os.WriteFile(p, b, 0600)
 	if _, _, e := Read(root); e == nil {
 		t.Fatal("revision")

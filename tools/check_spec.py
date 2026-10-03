@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Structural and semantic anchors for the current r17 specification.
+"""Structural and semantic anchors for the current r18 specification.
 
 Historical revision entries are deliberately excluded from retired-term checks.
 Wire correctness is exercised by the conformance corpus, not prose fingerprints.
@@ -10,9 +10,11 @@ import re
 s = Path('spec/totipo-vault-format-v1.md').read_text(encoding='utf-8')
 norm, history = s.split('## 21. Revision history', 1)
 assert [int(n) for n in re.findall(r'^## (\d+)\.', s, re.M)] == list(range(1, 22))
-assert '**Revision:** r17' in norm and '**Protocol version:** 1' in norm
-for n in range(1, 18):
-    assert f'### v1/r{n}\n' in history
+assert '**Revision:** r18' in norm and '**Protocol version:** 1' in norm
+archive = Path('review/V1_PRE_R16_REVISION_HISTORY.md').read_text(encoding='utf-8')
+assert '../review/V1_PRE_R16_REVISION_HISTORY.md' in history
+for n in range(1, 19):
+    assert f'### v1/r{n}\n' in (archive if n < 16 else history)
 for term in ('DEVICE', 'DEVICE_ID', 'P-256', 'ECDSA', 'DER', 'SIGNATURE',
              'AUTHOR_DEVICE_ID', 'AUTHOR_TIME', 'PROVENANCE', 'OPAQUE_ROUTABLE',
              'OPAQUE_UNSCOPED', 'OBJECT_TYPE', 'OBJECT_VERSION', 'VAULT_BINDING',
@@ -69,4 +71,32 @@ assert 'no advisory-history, remembered-head, protocol-cache, or cross-run persi
 writing = ' '.join(fold.split())
 assert re.search(r'Unavailability of history alone MUST NOT prohibit authorship when the TOKEN_ID and complete desired TokenValue.*?known or supplied', writing)
 assert 'generate a new CSPRNG TOKEN_ID' in writing and 'empty parent set' in writing
-print('PASS: Totipo v1/r17 structural checks')
+# Application policy strength and scope boundaries remain distinct from core bytes.
+def section_text(number):
+    return ' '.join(norm.split(f'## {number}.', 1)[1].split(f'## {number + 1}.', 1)[0].split())
+
+password = section_text(5)
+assert 'interactive application MUST require explicit confirmation' in password
+assert 'before creating a vault with an empty password' in password
+creation = section_text(7)
+for anchor in ('during available observation', 'application observes',
+               'SHOULD prominently warn', 'SHOULD require explicit user confirmation',
+               'SHOULD recommend checking synchronization and provider state',
+               'MUST NOT require exhaustive enumeration',
+               'MUST NOT by itself make fresh creation impossible',
+               'unauthenticated contextual evidence'):
+    assert anchor in creation, anchor
+assert re.search(r'MUST NOT describe tombstoning or deleting a token as securely erasing', section_text(16))
+assert re.search(r'MUST NOT describe password rewrap as a complete security reset or as recovery from suspected K_root compromise', section_text(8))
+scopes = section_text(20)
+for scope in ('Core protocol', 'Store/writer', 'Application'):
+    assert f'| {scope} |' in scopes
+assert re.search(r'\| Core protocol \|[^|]*metadata preservation', scopes)
+for anchor in ('per-object metadata rule in Section 12',
+               'Section 17 additionally governs operation-wide fold metadata',
+               'MUST satisfy the applicable core requirements',
+               'core library need not guarantee the behavior of a GUI',
+               'portable corpus success alone does not establish application conformance',
+               'No stronger atomic primitive is imposed by this scope'):
+    assert anchor in scopes, anchor
+print('PASS: Totipo v1/r18 structural checks')

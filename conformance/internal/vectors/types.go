@@ -1,4 +1,4 @@
-// Package vectors consumes the language-neutral r17 corpus.
+// Package vectors consumes the language-neutral r18 corpus.
 package vectors
 
 import (

@@ -1,6 +1,6 @@
 # Contributing
 
-The [v1/r17 specification](spec/totipo-vault-format-v1.md) is normative. Design
+The [v1/r18 specification](spec/totipo-vault-format-v1.md) is normative. Design
 checkpoints in `review/` are historical inputs, and the Go consumer is conformance
 evidence rather than production code.
 
